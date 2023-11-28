@@ -144,15 +144,13 @@ class r0123456:
 
     def calc_w_log_p_partial(self, w_log, sigma, i):
         n = len(sigma)
-        sum = 0 # calc sum in denominator
-        for j in range(i, n):
-            sum += np.exp(w_log[sigma[j]])
 
-        # intermediate_result = 0 # calc \Sigma (1/sum)
-        # for k in range(i): # TODO: instead of for loop could just interm_res = i*1/sum
-        #     intermediate_result += 1 / sum
-
-        intermediate_result = i / sum # calc \Sigma (1/sum)
+        intermediate_result = 0 # calc \Sigma (1/sum)
+        for k in range(i):
+            sum = 0 # calc sum in denominator
+            for j in range(k, n):
+                sum += np.exp(w_log[sigma[j]])
+                intermediate_result += 1 / sum
 
         return 1 - np.exp(w_log[sigma[i]]) * intermediate_result
 
