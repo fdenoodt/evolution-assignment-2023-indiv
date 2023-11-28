@@ -46,7 +46,7 @@ class r0123456:
         f = lambda indiv: compute_fitness(np.array([indiv]), distanceMatrix)[0]
         U = lambda x: x  # identity function
         lr = 0.01
-        nb_samples_lambda = 100
+        nb_samples_lambda = 1000
 
         self.optimize_plackett_luce(f, U, lr, nb_samples_lambda)
 
@@ -59,14 +59,17 @@ class r0123456:
         if ctr % frequency == 0:
             for i in range(len(arr)):
                 temp = np.array([f'{a:.2f}' for a in arr[i]])
-                # print(temp)
-                # temp to string
                 print(" ".join(temp))
-            print();
-            print("");
-            print("")
+            print()
+            print()
+            print()
 
-            # w_exp = np.array([f'{a:.2f}' for a in arr])
+    def is_done(self, i, meanObjective=0, bestObjective=0, bestSolution=np.array([])):
+        timeLeft = self.reporter.report(meanObjective, bestObjective, bestSolution)
+        i += 1
+        time_over = (timeLeft < 0 and self.keep_running_until_timeup)
+        iters_over = (not (self.keep_running_until_timeup) and i > self.numIters)
+        return (time_over or iters_over)
 
     def optimize_plackett_luce(self, fitness_function, U_trans_function, lr, nb_samples_lambda):
         w_log = np.zeros(self.num_cities)  # w is w_tilde
@@ -96,10 +99,10 @@ class r0123456:
                                               nb_samples_lambda)
             w_log = w_log - (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
-            # print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
+            print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
             # self.print_array(np.exp(w_log), ctr, frequency=10)
             # self.print_array(delta_w_log_F, ctr, frequency=10)
-            self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
+            # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
             ctr += 1
             # TODO
@@ -110,14 +113,6 @@ class r0123456:
                 break
 
         return best_fitness, sigma_best
-
-    def is_done(self, i, meanObjective=0, bestObjective=0, bestSolution=np.array([])):
-        timeLeft = self.reporter.report(meanObjective, bestObjective, bestSolution)
-        i += 1
-        time_over = (timeLeft < 0 and self.keep_running_until_timeup)
-        iters_over = (not (self.keep_running_until_timeup) and i > self.numIters)
-        if (time_over or iters_over):
-            return True
 
     def sample_permutation(self, w):
         n = self.num_cities
@@ -147,31 +142,23 @@ class r0123456:
 
         return node
 
-    # def calc_w_log_p_partial(self, w_log, sigma, i):
-    #     n = len(sigma)
-    #     exp_w_sigma_i = np.exp(w_log[sigma[i]])
-    #     denominator = np.sum(np.exp(w_log[sigma[i]:]))
-    #
-    #     partial_at_sigma_i = 1 - exp_w_sigma_i / denominator
-    #
-    #     intermediate_sum = 0
-    #     for k in range(1, i + 1):
-    #
-    #
-    #     return partial_at_sigma_i
-
     def calc_w_log_p_partial(self, w_log, sigma, i):
         n = len(sigma)
-        intermediate_result = 0
-        for k in range(i):
-            sum = 0
-            for j in range(i, n):
-                sum += np.exp(w_log[sigma[j]])
-            intermediate_result += 1 / sum
+        sum = 0 # calc sum in denominator
+        for j in range(i, n):
+            sum += np.exp(w_log[sigma[j]])
+
+        # intermediate_result = 0 # calc \Sigma (1/sum)
+        # for k in range(i): # TODO: instead of for loop could just interm_res = i*1/sum
+        #     intermediate_result += 1 / sum
+
+        intermediate_result = i / sum # calc \Sigma (1/sum)
 
         return 1 - np.exp(w_log[sigma[i]]) * intermediate_result
 
-    def calc_w_log_p(self, w_log, sigma):  # TODO: generated with chatgpt, should verify it
+
+
+    def calc_w_log_p(self, w_log, sigma):
         # Calculates all partial derivatives for a sample sigma
         n = len(sigma)
         gradient = np.zeros_like(w_log)
