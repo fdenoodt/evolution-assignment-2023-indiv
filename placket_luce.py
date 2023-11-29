@@ -3,8 +3,7 @@ import numpy as np
 
 class PlackettLuce:
 
-    def __init__(self, num_cities):
-        self.num_cities = num_cities
+    def __init__(self):
         self.U = self.U_super_linear
 
 
@@ -41,7 +40,7 @@ class PlackettLuce:
         return adjusted_xs
 
     def sample_permutation(self, w):
-        n = self.num_cities
+        n = len(w)
         sigma = np.zeros(n, dtype=int)
         used_nodes = np.zeros(n, dtype=bool)
 
@@ -64,7 +63,8 @@ class PlackettLuce:
             assert False
 
         # sample from probabilities
-        node = np.random.choice(self.num_cities, p=probabilities)
+        n = len(probabilities)
+        node = np.random.choice(n, p=probabilities)
 
         return node
 

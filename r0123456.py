@@ -17,7 +17,7 @@ class r0123456:
         self.nb_samples_lambda = 10
 
         self.utility = Utility(self.reporter, self.keep_running_until_timeup, self.numIters)
-        self.pl = PlackettLuce(self.num_cities)
+        self.pl = PlackettLuce()
 
     def initialize_population(self, population_size, num_cities):
         population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
