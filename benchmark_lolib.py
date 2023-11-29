@@ -47,7 +47,9 @@ class Benchmark:
                     # fitness += self.matrix[int(individual[i])][int(individual[j])]
 
             fitnesses.append(fitness)
-        return np.array(fitnesses)
+
+        # was initially a maximization problem, so we need to negate the fitnesses
+        return - np.array(fitnesses)
 
 
 if __name__ == '__main__':

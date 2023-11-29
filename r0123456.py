@@ -13,7 +13,7 @@ class r0123456:
         self.numIters = 1000
 
         self.lr = 0.01
-        self.nb_samples_lambda = 10
+        self.nb_samples_lambda = 100
 
         self.utility = Utility(self.reporter, self.keep_running_until_timeup, self.numIters)
         self.pl = PlackettLuce()
