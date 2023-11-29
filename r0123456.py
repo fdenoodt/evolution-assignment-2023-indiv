@@ -57,9 +57,8 @@ class r0123456:
             w_log = w_log - (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
             avg_fitness = np.average(fitnesses)
-            print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
+            self.utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)
             self.utility.print_array(np.exp(w_log), ctr, frequency=10)
-
             # self.utility.print_array(delta_w_log_F, ctr, frequency=10)
             # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
