@@ -33,6 +33,12 @@ class r0123456:
         population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
         return population
 
+    def U_identity(self, x):
+        return x
+
+    def U_normalize(self, x, xs):
+        return x / np.sum(xs)
+
     def optimize(self, filename):
         # Read distance matrix from file.
         file = open(filename)
@@ -42,11 +48,12 @@ class r0123456:
         distanceMatrix = replace_inf_with_large_val(distanceMatrix)
         distanceMatrix = normalize_distance_matrix(distanceMatrix)
 
+        nb_samples_lambda = 10
+
         # fitness function
         f = lambda indiv: compute_fitness(np.array([indiv]), distanceMatrix)[0]
-        U = lambda x: x  # identity function
+
         lr = 0.1
-        nb_samples_lambda = 10
 
         self.optimize_plackett_luce(f, U, lr, nb_samples_lambda)
 
