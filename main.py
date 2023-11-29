@@ -10,6 +10,8 @@
 import r0123456
 import numpy as np
 
+from benchmark_lolib import Benchmark
+
 
 def run_experiment():
     print("*******************************************************************")
@@ -17,15 +19,16 @@ def run_experiment():
 
     a: r0123456 = r0123456.r0123456()
 
-    best_fitness = a.optimize(filename)
+    benchmark = Benchmark(filename)
+    best_fitness = a.optimize(benchmark)
     return best_fitness
 
 
-# The main function can be used to test your code.
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    filename = "./tour50.csv"
+    # filename = "./tour50.csv"
+    filename = "./benchmarks/be75eec.mat"
 
     # Set parameters
     run_experiment()

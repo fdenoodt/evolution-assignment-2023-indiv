@@ -11,6 +11,9 @@ class Benchmark:
         distanceMatrix = self.replace_inf_with_large_val(distanceMatrix)
         self.distanceMatrix = self.normalize_distance_matrix(distanceMatrix)
 
+    def permutation_size(self):
+        return self.distanceMatrix.shape[0]
+
     def replace_inf_with_large_val(self, distanceMatrix):
         # replace inf with largest non inf value * max number of cities
         # just max is not enough, needs to make sure that worst possible path is still better than a single inf

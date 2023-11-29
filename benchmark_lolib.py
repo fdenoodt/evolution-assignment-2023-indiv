@@ -5,6 +5,9 @@ class Benchmark:
     def __init__(self, filename):
         self.matrix = self.read_matrix_from_file(filename)
 
+    def permutation_size(self):
+        return self.matrix.shape[0]
+
     def read_dimensions_from_file(self, file_path):
         with open(file_path, 'r') as file:
             _ = file.readline()  # skip first line
@@ -32,8 +35,9 @@ class Benchmark:
         # eg population: [[1,2,3,4,5],[1,2,3,4,5], ... ]
 
         fitnesses = []
+        popul_size = len(population)
         n = len(population[0])
-        for indiv_idx in range(n):  # iterate over population
+        for indiv_idx in range(popul_size):  # iterate over population
             individual = population[indiv_idx]
             fitness = 0
 

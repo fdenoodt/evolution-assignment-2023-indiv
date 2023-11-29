@@ -4,7 +4,7 @@ import numpy as np
 class PlackettLuce:
 
     def __init__(self):
-        self.U = self.U_super_linear
+        self.U = self.U_normalize
 
 
     def U_identity(self, xs):

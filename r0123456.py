@@ -9,11 +9,10 @@ from utility import Utility
 class r0123456:
     def __init__(self):
         self.reporter = Reporter.Reporter(self.__class__.__name__)
-        self.num_cities = 50
         self.keep_running_until_timeup = True
         self.numIters = 1000
 
-        self.lr = 0.1
+        self.lr = 0.01
         self.nb_samples_lambda = 10
 
         self.utility = Utility(self.reporter, self.keep_running_until_timeup, self.numIters)
@@ -23,23 +22,23 @@ class r0123456:
         population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
         return population
 
-    def optimize(self, filename):
-        benchmark = Benchmark(filename)
+    def optimize(self, benchmark):
+        n = benchmark.permutation_size()
 
         # fitness function
         f = lambda indiv: benchmark.compute_fitness(np.array([indiv]))[0]
-        self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda)
+        self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n)
 
-    def optimize_plackett_luce(self, fitness_function, lr, nb_samples_lambda):
-        w_log = np.zeros(self.num_cities)  # w is w_tilde
-        sigma_best = np.zeros(self.num_cities)  # the best permutation so far
+    def optimize_plackett_luce(self, fitness_function, lr, nb_samples_lambda, n):
+        w_log = np.zeros(n)  # w is w_tilde
+        sigma_best = np.zeros(n)  # the best permutation so far
         best_fitness = np.inf
 
         ctr = 0
         while True:
             # sample from plackett luce
-            delta_w_log_ps = np.zeros((nb_samples_lambda, self.num_cities))
-            sigmas = np.zeros((nb_samples_lambda, self.num_cities), dtype=int)
+            delta_w_log_ps = np.zeros((nb_samples_lambda, n))
+            sigmas = np.zeros((nb_samples_lambda, n), dtype=int)
             fitnesses = np.zeros(nb_samples_lambda)
 
             for i in range(nb_samples_lambda):
@@ -60,6 +59,7 @@ class r0123456:
             avg_fitness = np.average(fitnesses)
             print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
             self.utility.print_array(np.exp(w_log), ctr, frequency=10)
+
             # self.utility.print_array(delta_w_log_F, ctr, frequency=10)
             # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
@@ -73,14 +73,13 @@ class r0123456:
 
         return best_fitness, sigma_best
 
-
 # if __name__ == '__main__':
-    # distanceMatrix = np.array([[0, 1, 2, 3, 4],
-    #                            [np.inf, 0, 1, 2, 3],  # 1 -> 0 has dist inf
-    #                            [2, 1, 0, 1, 2],
-    #                            [3, 2, 1, 0, 1],
-    #                            [4, 3, 2, 1, 0]])
-    #
-    # individual = np.array([4, 0, 2, 1, 3])
-    # population = np.array([individual])
-    # b = compute_fitness(population, distanceMatrix)
+# distanceMatrix = np.array([[0, 1, 2, 3, 4],
+#                            [np.inf, 0, 1, 2, 3],  # 1 -> 0 has dist inf
+#                            [2, 1, 0, 1, 2],
+#                            [3, 2, 1, 0, 1],
+#                            [4, 3, 2, 1, 0]])
+#
+# individual = np.array([4, 0, 2, 1, 3])
+# population = np.array([individual])
+# b = compute_fitness(population, distanceMatrix)
