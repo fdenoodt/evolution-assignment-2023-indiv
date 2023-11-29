@@ -55,7 +55,7 @@ class r0123456:
 
         lr = 0.1
 
-        self.optimize_plackett_luce(f, U, lr, nb_samples_lambda)
+        self.optimize_plackett_luce(f, self.U_identity, lr, nb_samples_lambda)
 
     def print_array(self, arr, ctr, frequency=10):
         if ctr % frequency == 0:
@@ -88,24 +88,24 @@ class r0123456:
             # sample from plackett luce
             delta_w_log_ps = np.zeros((nb_samples_lambda, self.num_cities))
             sigmas = np.zeros((nb_samples_lambda, self.num_cities), dtype=int)
+            fitnesses = np.zeros(nb_samples_lambda)
 
-            avg_fitness = 0
             for i in range(nb_samples_lambda):
                 # sample sigma_i from Plackett luce
                 sigmas[i] = self.sample_permutation(np.exp(w_log))
-                fitness = fitness_function(sigmas[i])
-                avg_fitness += fitness
+                fitnesses[i] = fitness_function(sigmas[i])
+
                 delta_w_log_ps[i] = self.calc_w_log_p(w_log, sigmas[i])  # returns a vector
 
-                if fitness < best_fitness:
-                    best_fitness = fitness
+                if fitnesses[i] < best_fitness:
+                    best_fitness = fitnesses[i]
                     sigma_best = sigmas[i]
 
-            delta_w_log_F = self.calc_w_log_F(w_log, sigmas,
-                                              delta_w_log_ps, U_trans_function, fitness_function,
-                                              nb_samples_lambda)
+            delta_w_log_F = self.calc_w_log_F(w_log, fitnesses,
+                                              delta_w_log_ps, U_trans_function, nb_samples_lambda)
             w_log = w_log - (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
+            # avg_fitness = np.mean(fitnesses)
             # print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
             self.print_array(np.exp(w_log), ctr, frequency=10)
             # self.print_array(delta_w_log_F, ctr, frequency=10)
@@ -132,6 +132,24 @@ class r0123456:
             used_nodes[node] = True
 
         return sigma
+
+    # multiple samples
+    # def sample_permutation(self, w, size=1):
+    #     n = self.num_cities
+    #     samples = np.zeros((size, n), dtype=int)
+    #
+    #     for i in range(size):
+    #         sigma = np.zeros(n, dtype=int)
+    #         used_nodes = np.zeros(n, dtype=bool)
+    #
+    #         for j in range(n):
+    #             node = self.sample_node(w, used_nodes)  # should return one city
+    #             sigma[j] = node
+    #             used_nodes[node] = True
+    #
+    #         samples[i] = sigma
+    #
+    #     return samples
 
     def sample_node(self, w, used_nodes):
         # compute probabilities: its the values in w, except its zero for used nodes
@@ -172,11 +190,12 @@ class r0123456:
 
         return gradient
 
-    def calc_w_log_F(self, w_log, sigmas, delta_w_log_ps, U, f, nb_samples_lambda, ):
+
+    def calc_w_log_F(self, w_log, fitnesses, delta_w_log_ps, U, nb_samples_lambda, ):
         gradient = np.zeros_like(w_log)
 
         for i in range(nb_samples_lambda):
-            f_val = U(f(sigmas[i]))  # scalar
+            f_val = U(fitnesses[i])  # scalar
             gradient += f_val * delta_w_log_ps[i]  # scalar * vector
 
         gradient /= nb_samples_lambda
