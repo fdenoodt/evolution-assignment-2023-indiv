@@ -5,6 +5,7 @@ class PlackettLuce:
 
     def __init__(self, num_cities):
         self.num_cities = num_cities
+        self.U = self.U_super_linear
 
 
     def U_identity(self, xs):
@@ -35,7 +36,7 @@ class PlackettLuce:
         adjusted_xs = np.zeros_like(xs)
         adjusted_xs[sorted_indices[:int(mu)]] = 0
         adjusted_xs[sorted_indices[int(mu):]] = np.exp(xs[sorted_indices[int(mu):]])
-        # adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
+        adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
 
         return adjusted_xs
 
@@ -90,10 +91,10 @@ class PlackettLuce:
 
         return gradient
 
-    def calc_w_log_F(self, w_log, fitnesses, delta_w_log_ps, U, nb_samples_lambda, ):
+    def calc_w_log_F(self, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
         gradient = np.zeros_like(w_log)
 
-        f_vals = U(fitnesses)  # list of scalar with len nb_samples_lambda
+        f_vals = self.U(fitnesses)  # list of scalar with len nb_samples_lambda
 
         # old way, slow
         # for i in range(nb_samples_lambda):

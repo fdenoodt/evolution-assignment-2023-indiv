@@ -28,10 +28,9 @@ class r0123456:
 
         # fitness function
         f = lambda indiv: benchmark.compute_fitness(np.array([indiv]))[0]
+        self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda)
 
-        self.optimize_plackett_luce(f, self.pl.U_identity, self.lr, self.nb_samples_lambda)
-
-    def optimize_plackett_luce(self, fitness_function, U_trans_function, lr, nb_samples_lambda):
+    def optimize_plackett_luce(self, fitness_function, lr, nb_samples_lambda):
         w_log = np.zeros(self.num_cities)  # w is w_tilde
         sigma_best = np.zeros(self.num_cities)  # the best permutation so far
         best_fitness = np.inf
@@ -55,13 +54,13 @@ class r0123456:
                     sigma_best = sigmas[i]
 
             delta_w_log_F = self.pl.calc_w_log_F(w_log, fitnesses,
-                                                 delta_w_log_ps, U_trans_function, nb_samples_lambda)
+                                                 delta_w_log_ps, nb_samples_lambda)
             w_log = w_log - (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
             avg_fitness = np.average(fitnesses)
             print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
-            # self.print_array(np.exp(w_log), ctr, frequency=10)
-            # self.print_array(delta_w_log_F, ctr, frequency=10)
+            self.utility.print_array(np.exp(w_log), ctr, frequency=10)
+            # self.utility.print_array(delta_w_log_F, ctr, frequency=10)
             # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
             ctr += 1
