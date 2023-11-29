@@ -33,11 +33,37 @@ class r0123456:
         population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
         return population
 
-    def U_identity(self, x):
-        return x
+    def U_identity(self, xs):
+        return xs
 
-    def U_normalize(self, x, xs):
-        return x / np.sum(xs)
+    def U_normalize(self, xs):
+        return xs / np.sum(xs)
+
+    def U_super_linear(self, xs):  # xs are fitnesses
+        # Sort the samples from the best to the worst in
+        # terms of fitness and set 𝜇 = 𝜆/2. Assign null utility to the 𝜇 worst
+        # samples, while, for the remaining ones, temporarily assign to the
+        # 𝑖–th best sample exp(𝑖) points of utility and, finally, normalize the
+        # utilities of the best 𝜇 samples. This utility function makes PL-GS
+        # invariant for monotonic transformations of the objective function
+        # and it is inspired by weights used in the CMA-ES algorithm [16].
+
+        # this is wrong, it returns the sorted xs, not the sorted indices
+        # mu = len(xs) / 2
+        # xs = np.sort(xs)  # np.sort is ascending, so best fitness is last
+        # xs[:int(mu)] = 0  # set worst mu to 0
+        # xs[int(mu):] = np.exp(xs[int(mu):])  # set best mu to exp(i)
+        # xs = xs / np.sum(xs)  # normalize
+
+        # this is correct
+        mu = len(xs) / 2
+        sorted_indices = np.argsort(xs)
+        adjusted_xs = np.zeros_like(xs)
+        adjusted_xs[sorted_indices[:int(mu)]] = 0
+        adjusted_xs[sorted_indices[int(mu):]] = np.exp(xs[sorted_indices[int(mu):]])
+        # adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
+
+        return adjusted_xs
 
     def optimize(self, filename):
         # Read distance matrix from file.
@@ -52,7 +78,6 @@ class r0123456:
 
         # fitness function
         f = lambda indiv: compute_fitness(np.array([indiv]), distanceMatrix)[0]
-
         lr = 0.1
 
         self.optimize_plackett_luce(f, self.U_identity, lr, nb_samples_lambda)
@@ -105,9 +130,9 @@ class r0123456:
                                               delta_w_log_ps, U_trans_function, nb_samples_lambda)
             w_log = w_log - (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
-            # avg_fitness = np.mean(fitnesses)
-            # print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
-            self.print_array(np.exp(w_log), ctr, frequency=10)
+            avg_fitness = np.average(fitnesses)
+            print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
+            # self.print_array(np.exp(w_log), ctr, frequency=10)
             # self.print_array(delta_w_log_F, ctr, frequency=10)
             # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
@@ -190,13 +215,17 @@ class r0123456:
 
         return gradient
 
-
     def calc_w_log_F(self, w_log, fitnesses, delta_w_log_ps, U, nb_samples_lambda, ):
         gradient = np.zeros_like(w_log)
 
-        for i in range(nb_samples_lambda):
-            f_val = U(fitnesses[i])  # scalar
-            gradient += f_val * delta_w_log_ps[i]  # scalar * vector
+        f_vals = U(fitnesses)  # list of scalar with len nb_samples_lambda
+
+        # old way, slow
+        # for i in range(nb_samples_lambda):
+        #     gradient += f_val * delta_w_log_ps[i]  # scalar * vector
+
+        gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
+        # f_vals[i] will multiply the i'th row of delta_w_log_ps, then sum over all rows, somehow it works
 
         gradient /= nb_samples_lambda
 
