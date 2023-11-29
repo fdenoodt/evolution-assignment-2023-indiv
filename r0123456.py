@@ -1,27 +1,9 @@
 import reporter as Reporter
 import numpy as np
 
+from benchmark_tsp import Benchmark
 from placket_luce import PlackettLuce
 from utility import Utility
-
-
-def replace_inf_with_large_val(distanceMatrix):
-    # replace inf with largest non inf value * max number of cities
-    # just max is not enough, needs to make sure that worst possible path is still better than a single inf
-    largest_value = np.max(distanceMatrix[distanceMatrix != np.inf]) * len(distanceMatrix)
-    distanceMatrix = np.where(distanceMatrix == np.inf,
-                              largest_value, distanceMatrix)
-    # faster for the start, finds existing solutions quicker but in long run not that much impact
-
-    print("largest non inf val: ", largest_value)
-    return distanceMatrix
-
-
-def normalize_distance_matrix(distanceMatrix):
-    # normalize distance matrix to be between 0 and 1
-    # it makes the w's smaller and thus less likely to overflow
-    distanceMatrix = distanceMatrix / np.max(distanceMatrix)
-    return distanceMatrix
 
 
 class r0123456:
@@ -42,17 +24,10 @@ class r0123456:
         return population
 
     def optimize(self, filename):
-        # Read distance matrix from file.
-        file = open(filename)
-        distanceMatrix = np.loadtxt(file, delimiter=",")
-        file.close()
-
-        distanceMatrix = replace_inf_with_large_val(distanceMatrix)
-        distanceMatrix = normalize_distance_matrix(distanceMatrix)
+        benchmark = Benchmark(filename)
 
         # fitness function
-        f = lambda indiv: compute_fitness(np.array([indiv]), distanceMatrix)[0]
-
+        f = lambda indiv: benchmark.compute_fitness(np.array([indiv]))[0]
 
         self.optimize_plackett_luce(f, self.pl.U_identity, self.lr, self.nb_samples_lambda)
 
@@ -80,7 +55,7 @@ class r0123456:
                     sigma_best = sigmas[i]
 
             delta_w_log_F = self.pl.calc_w_log_F(w_log, fitnesses,
-                                              delta_w_log_ps, U_trans_function, nb_samples_lambda)
+                                                 delta_w_log_ps, U_trans_function, nb_samples_lambda)
             w_log = w_log - (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
             avg_fitness = np.average(fitnesses)
@@ -100,45 +75,13 @@ class r0123456:
         return best_fitness, sigma_best
 
 
-def compute_fitness(population, distanceMatrix):  # slow, but easy to understand
-    # shape: (populationSize, numCities)
-    # eg population: [[1,2,3,4,5],[1,2,3,4,5], ... ]
-
-    fitnesses = []
-    for i in range(len(population)):
-        individual = population[i]
-        fitness = 0
-        for j in range(len(individual)):
-            city = individual[j]
-            nextCity = individual[(j + 1) % len(individual)]
-            fitness += distanceMatrix[int(city)][int(nextCity)]
-
-        fitnesses.append(fitness)
-    return np.array(fitnesses)
-
-
-def compute_fitness_good(population, distanceMatrix):  # faster, generated with copilot but we understand it!
-
-    # assert population doesn't contain cities that are floats (sanity check, can be removed later)
-    assert np.all(np.equal(np.mod(population, 1), 0))
-
-    # the faster way
-    fitnesses = np.array([
-        sum([distanceMatrix[int(city)][int(nextCity)] for city, nextCity in zip(individual, np.roll(individual, -1))])
-        for individual in population])
-
-    # returns: (populationSize, 1)
-    # eg: [100,200, ... ]
-    return fitnesses
-
-
-if __name__ == '__main__':
-    distanceMatrix = np.array([[0, 1, 2, 3, 4],
-                               [np.inf, 0, 1, 2, 3],  # 1 -> 0 has dist inf
-                               [2, 1, 0, 1, 2],
-                               [3, 2, 1, 0, 1],
-                               [4, 3, 2, 1, 0]])
-
-    individual = np.array([4, 0, 2, 1, 3])
-    population = np.array([individual])
-    b = compute_fitness(population, distanceMatrix)
+# if __name__ == '__main__':
+    # distanceMatrix = np.array([[0, 1, 2, 3, 4],
+    #                            [np.inf, 0, 1, 2, 3],  # 1 -> 0 has dist inf
+    #                            [2, 1, 0, 1, 2],
+    #                            [3, 2, 1, 0, 1],
+    #                            [4, 3, 2, 1, 0]])
+    #
+    # individual = np.array([4, 0, 2, 1, 3])
+    # population = np.array([individual])
+    # b = compute_fitness(population, distanceMatrix)
