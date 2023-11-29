@@ -45,8 +45,8 @@ class r0123456:
         # fitness function
         f = lambda indiv: compute_fitness(np.array([indiv]), distanceMatrix)[0]
         U = lambda x: x  # identity function
-        lr = 0.01
-        nb_samples_lambda = 1000
+        lr = 0.1
+        nb_samples_lambda = 10
 
         self.optimize_plackett_luce(f, U, lr, nb_samples_lambda)
 
@@ -99,8 +99,8 @@ class r0123456:
                                               nb_samples_lambda)
             w_log = w_log - (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
-            print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
-            # self.print_array(np.exp(w_log), ctr, frequency=10)
+            # print(f"best fitness: {best_fitness}, avg fitness: {avg_fitness / nb_samples_lambda}")
+            self.print_array(np.exp(w_log), ctr, frequency=10)
             # self.print_array(delta_w_log_F, ctr, frequency=10)
             # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
@@ -145,17 +145,15 @@ class r0123456:
     def calc_w_log_p_partial(self, w_log, sigma, i):
         n = len(sigma)
 
-        intermediate_result = 0 # calc \Sigma (1/sum)
+        intermediate_result = 0  # calc \Sigma (1/sum)
         for k in range(i):
-            sum = 0 # calc sum in denominator
+            sum = 0  # calc sum in denominator
             for j in range(k, n):
                 sum += np.exp(w_log[sigma[j]])
 
             intermediate_result += 1 / sum
 
         return 1 - np.exp(w_log[sigma[i]]) * intermediate_result
-
-
 
     def calc_w_log_p(self, w_log, sigma):
         # Calculates all partial derivatives for a sample sigma
@@ -168,15 +166,15 @@ class r0123456:
         return gradient
 
     def calc_w_log_F(self, w_log, sigmas, delta_w_log_ps, U, f, nb_samples_lambda, ):
-        res = np.zeros_like(w_log)
+        gradient = np.zeros_like(w_log)
 
         for i in range(nb_samples_lambda):
             f_val = U(f(sigmas[i]))  # scalar
-            res += f_val * delta_w_log_ps[i]  # scalar * vector
+            gradient += f_val * delta_w_log_ps[i]  # scalar * vector
 
-        res /= nb_samples_lambda
+        gradient /= nb_samples_lambda
 
-        return res
+        return gradient
 
 
 def compute_fitness(population, distanceMatrix):  # slow, but easy to understand
