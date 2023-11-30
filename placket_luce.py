@@ -3,19 +3,20 @@ import numpy as np
 
 class PlackettLuce:
 
-    def __init__(self):
+    def __init__(self, U):
         # self.U = self.U_super_linear
-        self.U = self.U_normalize
+        self.U = U
 
-
-
-    def U_identity(self, xs):
+    @staticmethod
+    def U_identity(xs):
         return xs
 
-    def U_normalize(self, xs):
+    @staticmethod
+    def U_normalize(xs):
         return xs / np.sum(xs)
 
-    def U_super_linear(self, xs):  # xs are fitnesses
+    @staticmethod
+    def U_super_linear(xs):  # xs are fitnesses
         # Sort the samples from the best to the worst in
         # terms of fitness and set 𝜇 = 𝜆/2. Assign null utility to the 𝜇 worst
         # samples, while, for the remaining ones, temporarily assign to the

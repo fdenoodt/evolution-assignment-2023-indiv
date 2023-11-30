@@ -26,12 +26,6 @@ class Benchmark:
         matrix = data.reshape((dim, dim))
         return matrix
 
-    # def normalize_distance_matrix(self, distanceMatrix):
-    #     # normalize distance matrix to be between 0 and 1
-    #     # it makes the w's smaller and thus less likely to overflow
-    #     distanceMatrix = distanceMatrix / np.max(distanceMatrix)
-    #     return distanceMatrix
-
     def compute_fitness(self, population):
         return Benchmark.compute_fitness_static(self.matrix, population)
 
@@ -64,5 +58,6 @@ if __name__ == '__main__':
     population = np.random.randint(0, 50, size=(100, 50))
     # time the function's performance
     import timeit
+
     print(timeit.timeit(lambda: be75eec.compute_fitness(population), number=1000))
     print(timeit.timeit(lambda: be75eec.compute_fitness(population), number=1000))

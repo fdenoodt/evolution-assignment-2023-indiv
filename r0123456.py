@@ -8,16 +8,16 @@ from numba import jit
 
 
 class r0123456:
-    def __init__(self):
+    def __init__(self, lr, nb_samples_lambda, numIters, U):
         self.reporter = Reporter.Reporter(self.__class__.__name__)
         self.keep_running_until_timeup = True
-        self.numIters = 1000
+        self.numIters = numIters
 
-        self.lr = 0.01
-        self.nb_samples_lambda = 100
+        self.lr = lr
+        self.nb_samples_lambda = nb_samples_lambda
 
         self.utility = Utility(self.reporter, self.keep_running_until_timeup, self.numIters)
-        self.pl = PlackettLuce()
+        self.pl = PlackettLuce(U)
 
     def initialize_population(self, population_size, num_cities):
         population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])

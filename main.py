@@ -11,16 +11,23 @@ import r0123456
 import numpy as np
 
 from benchmark_lolib import Benchmark
+from placket_luce import PlackettLuce
 
 
 def run_experiment():
     print("*******************************************************************")
     print("Running experiment with parameters:")
 
-    a = r0123456.r0123456()
+    # lr, nb_samples_lambda, numIters, U
+    lr = 0.01
+    nb_samples_lambda = 100
+    numIters = 1000
+    U = PlackettLuce.U_super_linear
 
+    a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U)
     benchmark = Benchmark(filename)
     best_fitness = a.optimize(benchmark)
+
     return best_fitness
 
 
