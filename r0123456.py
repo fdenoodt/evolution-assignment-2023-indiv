@@ -1,10 +1,8 @@
 import reporter as Reporter
 import numpy as np
 
-from benchmark_tsp import Benchmark
 from placket_luce import PlackettLuce
 from utility import Utility
-from numba import jit
 
 
 class r0123456:
@@ -55,7 +53,7 @@ class r0123456:
 
             delta_w_log_F = self.pl.calc_w_log_F(w_log, fitnesses,
                                                  delta_w_log_ps, nb_samples_lambda)
-            w_log = w_log - (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
+            w_log = w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
             avg_fitness = np.average(fitnesses)
             self.utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)

@@ -19,13 +19,14 @@ def run_experiment():
     print("Running experiment with parameters:")
 
     # lr, nb_samples_lambda, numIters, U
-    lr = 0.01
+    lr = 0.1
     nb_samples_lambda = 100
     numIters = 1000
-    U = PlackettLuce.U_super_linear
+    U = PlackettLuce.U_identity
+
 
     a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U)
-    benchmark = Benchmark(filename)
+    benchmark = Benchmark(filename, normalize=True)
     best_fitness = a.optimize(benchmark)
 
     return best_fitness

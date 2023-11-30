@@ -3,8 +3,7 @@ import numpy as np
 
 class PlackettLuce:
 
-    def __init__(self, U):
-        # self.U = self.U_super_linear
+    def __init__(self, U, maximise=True):
         self.U = U
 
     @staticmethod
@@ -25,19 +24,20 @@ class PlackettLuce:
         # invariant for monotonic transformations of the objective function
         # and it is inspired by weights used in the CMA-ES algorithm [16].
 
-        # this is wrong, it returns the sorted xs, not the sorted indices
+        # in case of minimization:
         # mu = len(xs) / 2
-        # xs = np.sort(xs)  # np.sort is ascending, so best fitness is last
-        # xs[:int(mu)] = 0  # set worst mu to 0
-        # xs[int(mu):] = np.exp(xs[int(mu):])  # set best mu to exp(i)
-        # xs = xs / np.sum(xs)  # normalize
+        # sorted_indices = np.argsort(xs)
+        # adjusted_xs = np.zeros_like(xs)
+        # adjusted_xs[sorted_indices[:int(mu)]] = 0
+        # adjusted_xs[sorted_indices[int(mu):]] = np.exp(xs[sorted_indices[int(mu):]])
+        # adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
 
-        # this is correct
+        # for maximisation:
         mu = len(xs) / 2
         sorted_indices = np.argsort(xs)
         adjusted_xs = np.zeros_like(xs)
-        adjusted_xs[sorted_indices[:int(mu)]] = 0
-        adjusted_xs[sorted_indices[int(mu):]] = np.exp(xs[sorted_indices[int(mu):]])
+        adjusted_xs[sorted_indices[:int(mu)]] = np.exp(xs[sorted_indices[:int(mu)]])
+        adjusted_xs[sorted_indices[int(mu):]] = 0  # now final ones are the worst
         adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
 
         return adjusted_xs
@@ -98,12 +98,14 @@ class PlackettLuce:
         gradient = np.zeros_like(w_log)
 
         f_vals = self.U(fitnesses)  # list of scalar with len nb_samples_lambda
+        assert len(f_vals) == nb_samples_lambda
+        assert len(delta_w_log_ps) == nb_samples_lambda
 
         # old way, slow
-        # for i in range(nb_samples_lambda):
-        #     gradient += f_val * delta_w_log_ps[i]  # scalar * vector
+        for i in range(nb_samples_lambda):
+            gradient += f_vals[i] * delta_w_log_ps[i]  # scalar * vector
 
-        gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
+        # gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
         # f_vals[i] will multiply the i'th row of delta_w_log_ps, then sum over all rows, somehow it works
 
         gradient /= nb_samples_lambda

@@ -4,8 +4,18 @@ from numba import int32, jit
 
 
 class Benchmark:
-    def __init__(self, filename):
+    def __init__(self, filename, normalize=False):
         self.matrix = self.read_matrix_from_file(filename)
+        self.normalizing_constant = 1
+        if normalize:
+            self.matrix, self.normalizing_constant = self.normalize_matrix(self.matrix)
+
+    def normalize_matrix(self, matrix):
+        # normalize distance matrix to be between 0 and 1
+        # it makes the w's smaller and thus less likely to overflow
+        constant = np.max(matrix)
+        distanceMatrix = matrix / constant
+        return distanceMatrix, constant
 
     def permutation_size(self):
         return self.matrix.shape[0]
@@ -50,7 +60,7 @@ class Benchmark:
             fitnesses.append(fitness)
 
         # was initially a maximization problem, so we need to negate the fitnesses
-        return - np.array(fitnesses)
+        return np.array(fitnesses)
 
 
 if __name__ == '__main__':
