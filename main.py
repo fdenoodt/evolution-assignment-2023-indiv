@@ -17,7 +17,7 @@ def run_experiment():
     print("*******************************************************************")
     print("Running experiment with parameters:")
 
-    a: r0123456 = r0123456.r0123456()
+    a = r0123456.r0123456()
 
     benchmark = Benchmark(filename)
     best_fitness = a.optimize(benchmark)

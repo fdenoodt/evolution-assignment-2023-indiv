@@ -4,6 +4,7 @@ import numpy as np
 from benchmark_tsp import Benchmark
 from placket_luce import PlackettLuce
 from utility import Utility
+from numba import jit
 
 
 class r0123456:
@@ -26,7 +27,7 @@ class r0123456:
         n = benchmark.permutation_size()
 
         # fitness function
-        f = lambda indiv: benchmark.compute_fitness(np.array([indiv]))[0]
+        f = lambda indiv: (benchmark.compute_fitness(np.array([indiv]))[0])
         self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n)
 
     def optimize_plackett_luce(self, fitness_function, lr, nb_samples_lambda, n):

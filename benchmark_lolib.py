@@ -1,5 +1,7 @@
 import numpy as np
 
+from numba import int32, jit
+
 
 class Benchmark:
     def __init__(self, filename):
@@ -30,7 +32,12 @@ class Benchmark:
     #     distanceMatrix = distanceMatrix / np.max(distanceMatrix)
     #     return distanceMatrix
 
-    def compute_fitness(self, population):  # slow, but easy to understand
+    def compute_fitness(self, population):
+        return Benchmark.compute_fitness_static(self.matrix, population)
+
+    @staticmethod
+    @jit(nopython=True)
+    def compute_fitness_static(matrix, population):
         # shape: (populationSize, numCities)
         # eg population: [[1,2,3,4,5],[1,2,3,4,5], ... ]
 
@@ -43,7 +50,7 @@ class Benchmark:
 
             for i in range(n - 1):
                 for j in range(i + 1, n):
-                    fitness += self.matrix[individual[i]][individual[j]]
+                    fitness += matrix[individual[i]][individual[j]]
                     # fitness += self.matrix[int(individual[i])][int(individual[j])]
 
             fitnesses.append(fitness)
@@ -54,3 +61,8 @@ class Benchmark:
 
 if __name__ == '__main__':
     be75eec = Benchmark("benchmarks/be75eec.mat")
+    population = np.random.randint(0, 50, size=(100, 50))
+    # time the function's performance
+    import timeit
+    print(timeit.timeit(lambda: be75eec.compute_fitness(population), number=1000))
+    print(timeit.timeit(lambda: be75eec.compute_fitness(population), number=1000))
