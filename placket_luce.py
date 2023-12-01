@@ -1,5 +1,5 @@
+import torch
 import numpy as np
-
 
 class PlackettLuce:
 
@@ -12,7 +12,7 @@ class PlackettLuce:
 
     @staticmethod
     def U_normalize(xs):
-        return xs / np.sum(xs)
+        return xs / torch.sum(xs)
 
     @staticmethod
     def U_super_linear(xs):  # xs are fitnesses
@@ -26,26 +26,26 @@ class PlackettLuce:
 
         # in case of minimization:
         # mu = len(xs) / 2
-        # sorted_indices = np.argsort(xs)
-        # adjusted_xs = np.zeros_like(xs)
+        # sorted_indices = torch.argsort(xs)
+        # adjusted_xs = torch.zeros_like(xs)
         # adjusted_xs[sorted_indices[:int(mu)]] = 0
-        # adjusted_xs[sorted_indices[int(mu):]] = np.exp(xs[sorted_indices[int(mu):]])
-        # adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
+        # adjusted_xs[sorted_indices[int(mu):]] = torch.exp(xs[sorted_indices[int(mu):]])
+        # adjusted_xs = adjusted_xs / torch.sum(adjusted_xs)
 
         # for maximisation:
         mu = len(xs) / 2
-        sorted_indices = np.argsort(xs)
-        adjusted_xs = np.zeros_like(xs)
-        adjusted_xs[sorted_indices[:int(mu)]] = np.exp(xs[sorted_indices[:int(mu)]])
+        sorted_indices = torch.argsort(xs)
+        adjusted_xs = torch.zeros_like(xs)
+        adjusted_xs[sorted_indices[:int(mu)]] = torch.exp(xs[sorted_indices[:int(mu)]])
         adjusted_xs[sorted_indices[int(mu):]] = 0  # now final ones are the worst
-        adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
+        adjusted_xs = adjusted_xs / torch.sum(adjusted_xs)
 
         return adjusted_xs
 
     def sample_permutation(self, w):
         n = len(w)
-        sigma = np.zeros(n, dtype=int)
-        used_nodes = np.zeros(n, dtype=bool)
+        sigma = torch.zeros(n, dtype=torch.int)
+        used_nodes = torch.zeros(n, dtype=torch.bool)
 
         for i in range(n):
             node = self.sample_node(w, used_nodes)  # should return one city
@@ -56,18 +56,18 @@ class PlackettLuce:
 
     def sample_node(self, w, used_nodes):
         # compute probabilities: its the values in w, except its zero for used nodes
-        probabilities = w.copy()
+        probabilities = w.clone()
         probabilities[used_nodes] = 0
-        probabilities /= np.sum(
+        probabilities /= torch.sum(
             probabilities)
 
         # check if probabilities contain NaNs
-        if np.isnan(probabilities).any():
+        if torch.isnan(probabilities).any():
             assert False
 
         # sample from probabilities
         n = len(probabilities)
-        node = np.random.choice(n, p=probabilities)
+        node = np.random.choice(n, p=probabilities.numpy())
 
         return node
 
@@ -78,16 +78,16 @@ class PlackettLuce:
         for k in range(i):
             sum = 0  # calc sum in denominator
             for j in range(k, n):
-                sum += np.exp(w_log[sigma[j]])
+                sum += torch.exp(w_log[sigma[j]])
 
             intermediate_result += 1 / sum
 
-        return 1 - np.exp(w_log[sigma[i]]) * intermediate_result
+        return 1 - torch.exp(w_log[sigma[i]]) * intermediate_result
 
     def calc_w_log_p(self, w_log, sigma):
         # Calculates all partial derivatives for a sample sigma
         n = len(sigma)
-        gradient = np.zeros_like(w_log)
+        gradient = torch.zeros_like(w_log)
 
         for i in range(n):
             gradient[sigma[i]] = self.calc_w_log_p_partial(w_log, sigma, i)
@@ -95,7 +95,7 @@ class PlackettLuce:
         return gradient
 
     def calc_w_log_F(self, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
-        gradient = np.zeros_like(w_log)
+        gradient = torch.zeros_like(w_log)
 
         f_vals = self.U(fitnesses)  # list of scalar with len nb_samples_lambda
         assert len(f_vals) == nb_samples_lambda
@@ -105,7 +105,7 @@ class PlackettLuce:
         for i in range(nb_samples_lambda):
             gradient += f_vals[i] * delta_w_log_ps[i]  # scalar * vector
 
-        # gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
+        # gradient = torch.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
         # f_vals[i] will multiply the i'th row of delta_w_log_ps, then sum over all rows, somehow it works
 
         gradient /= nb_samples_lambda

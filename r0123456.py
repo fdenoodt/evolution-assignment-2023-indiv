@@ -1,8 +1,10 @@
 import reporter as Reporter
-import numpy as np
-
 from placket_luce import PlackettLuce
 from utility import Utility
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 
 class r0123456:
@@ -17,55 +19,39 @@ class r0123456:
         self.utility = Utility(self.reporter, self.keep_running_until_timeup, self.numIters)
         self.pl = PlackettLuce(U)
 
-    def initialize_population(self, population_size, num_cities):
-        population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
-        return population
-
     def optimize(self, benchmark):
         n = benchmark.permutation_size()
 
         # fitness function
-        f = lambda indiv: (benchmark.compute_fitness(np.array([indiv]))[0])
+        f = lambda indiv: (benchmark.compute_fitness(torch.unsqueeze(indiv.clone().detach(), 0))[0])
         self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n)
 
     def optimize_plackett_luce(self, fitness_function, lr, nb_samples_lambda, n):
-        w_log = np.zeros(n)  # w is w_tilde
-        sigma_best = np.zeros(n)  # the best permutation so far
-        best_fitness = np.inf
+        w_log = torch.zeros(n)  # w is w_tilde
+        sigma_best = torch.zeros(n)  # the best permutation so far
+        best_fitness = torch.inf
 
         ctr = 0
         while True:
-            # sample from plackett luce
-            delta_w_log_ps = np.zeros((nb_samples_lambda, n))
-            sigmas = np.zeros((nb_samples_lambda, n), dtype=int)
-            fitnesses = np.zeros(nb_samples_lambda)
+            sigmas = torch.zeros((nb_samples_lambda, n), dtype=torch.int)
+            fitnesses = torch.zeros(nb_samples_lambda)
 
             for i in range(nb_samples_lambda):
                 # sample sigma_i from Plackett luce
-                sigmas[i] = self.pl.sample_permutation(np.exp(w_log))
+                sigmas[i] = self.pl.sample_permutation(torch.exp(w_log))
                 fitnesses[i] = fitness_function(sigmas[i])
-
-                delta_w_log_ps[i] = self.pl.calc_w_log_p(w_log, sigmas[i])  # returns a vector
 
                 if fitnesses[i] < best_fitness:
                     best_fitness = fitnesses[i]
                     sigma_best = sigmas[i]
 
-            delta_w_log_F = self.pl.calc_w_log_F(w_log, fitnesses,
-                                                 delta_w_log_ps, nb_samples_lambda)
-            w_log = w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
+            # w_log = ...
 
-            avg_fitness = np.average(fitnesses)
+            avg_fitness = torch.mean(fitnesses)
             self.utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)
             self.utility.print_array((w_log), ctr, frequency=10)
-            # self.utility.print_array(np.exp(w_log), ctr, frequency=10)
-            # self.utility.print_array(delta_w_log_F, ctr, frequency=10)
-            # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
             ctr += 1
-            # TODO
-            # if numerical problems occurred:
-            #   w = almost degenerate distr with mode at sigma_best
 
             if self.utility.is_done(ctr):
                 break

@@ -1,7 +1,5 @@
+import torch
 import numpy as np
-
-from numba import int32, jit
-
 
 class Benchmark:
     def __init__(self, filename, normalize=False):
@@ -13,7 +11,7 @@ class Benchmark:
     def normalize_matrix(self, matrix):
         # normalize distance matrix to be between 0 and 1
         # it makes the w's smaller and thus less likely to overflow
-        constant = np.max(matrix)
+        constant = torch.max(matrix)
         distanceMatrix = matrix / constant
         return distanceMatrix, constant
 
@@ -34,13 +32,15 @@ class Benchmark:
         assert rows * cols == dim * dim
 
         matrix = data.reshape((dim, dim))
+
+        # to tensor
+        matrix = torch.tensor(matrix, dtype=torch.int32) #float32
         return matrix
 
     def compute_fitness(self, population):
         return Benchmark.compute_fitness_static(self.matrix, population)
 
     @staticmethod
-    @jit(nopython=True)
     def compute_fitness_static(matrix, population):
         # shape: (populationSize, numCities)
         # eg population: [[1,2,3,4,5],[1,2,3,4,5], ... ]
@@ -59,8 +59,8 @@ class Benchmark:
 
             fitnesses.append(fitness)
 
-        # was initially a maximization problem, so we need to negate the fitnesses
-        return np.array(fitnesses)
+        # return np.array(fitnesses)
+        return torch.tensor(fitnesses, dtype=torch.float32)
 
 
 if __name__ == '__main__':
