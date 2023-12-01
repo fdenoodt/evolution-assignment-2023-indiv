@@ -9,7 +9,7 @@ class Utility:
         self.numIters = numIters
 
     def print_score(self, ctr, best_fitness, avg_fitness, nb_samples_lambda):
-        print(f"{ctr} \t best fitness: {best_fitness:_.2f}, avg fitness: {avg_fitness / nb_samples_lambda:_.2f}")
+        print(f"{ctr} \t best fitness: {best_fitness:_.2f}, avg fitness: {avg_fitness / nb_samples_lambda:_.4f}")
 
     def print_array(self, arr, ctr, frequency=10):
         if ctr % frequency == 0:

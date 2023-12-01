@@ -59,7 +59,7 @@ class PlackettLuce:
         probabilities = w.copy()
         probabilities[used_nodes] = 0
         probabilities /= np.sum(
-            probabilities)  # TODO: COULD BE THAT W'S ARE STILL LOGS SO NEED TO EXP THEM OR VICE VERSA
+            probabilities)
 
         # check if probabilities contain NaNs
         if np.isnan(probabilities).any():
