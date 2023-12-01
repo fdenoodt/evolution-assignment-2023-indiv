@@ -32,18 +32,41 @@ class r0123456:
         target = torch.ones_like(w_log)
         return loss(w_log, target)
 
+    def test_loss_2(self, sigma):
+        # all sigmas (= permutations) should start with 5
+        mse = nn.MSELoss()
+
+        # target is a permutation with 5 on the first position
+        # target = torch.zeros_like(sigma, dtype=torch.float) # dtype fixes: RuntimeError: "mse_cpu" not implemented for 'Int'
+        target = torch.tensor(2.0)
+
+        return mse(sigma, target)
+
+    def sample_elements_categorical_distr(self, w, nb_samples_lambda):
+        # [ 1/3 1/3 1/3]
+        # sigma = torch.distributions.categorical.Categorical(w).sample()
+        mu = w[0]
+        std = w[1]
+        sigma = torch.normal(mu, std)
+        # sigma = w[0]
+        return sigma
 
     def optimize_plackett_luce(self, fitness_function, lr, nb_samples_lambda, n):
-        w_log = torch.zeros(n)  # w is w_tilde
-        w_log.requires_grad = True
+        # w_log = torch.zeros(n, requires_grad=True)
+        w_log = torch.ones(n, requires_grad=True)
 
         sigma_best = torch.zeros(n)  # the best permutation so far
         best_fitness = torch.inf
 
         ctr = 0
         while True:
+            # sample lambda permutations
+            sigmas = self.sample_elements_categorical_distr(w_log, nb_samples_lambda)
+
+
             w_log.grad = None
-            loss = self.test_loss(w_log)
+            # loss = self.test_loss(w_log)
+            loss = self.test_loss_2(sigmas)
             loss.backward()
 
             with torch.no_grad():
@@ -51,8 +74,6 @@ class r0123456:
                 # w_log = torch.clamp(w_log, min=0)
 
             print(w_log)
-
-
 
             # sigmas = torch.zeros((nb_samples_lambda, n), dtype=torch.int)
             # fitnesses = torch.zeros(nb_samples_lambda)
