@@ -2,9 +2,14 @@
 # The link was discussed in paper:
 # "A benchmark library and a comparison of heuristic  methods for the linear ordering problem"
 
-# from scipy.io import loadmat
-# x = loadmat('be75eec.mat')
-# print(x)
+
+# 3.2 Individual phase (40h)
+# In the individual phase you continue from the code that you prepared in the group phase with your group.
+# From this point onwards, the project is an individual assignment. Cooperation is forbidden in this phase.
+# The goal of this phase is that you develop an advanced, optimized evolutionary algorithm for the traveling salesperson problem. You could implement additional or more advanced initialization heuristics, selection schemes, elimination mechanisms, variation operators, local search operators, population enrichment
+# schemes, parameter self-adaptivity, optimized hyperparameter search, diversity-promoting schemes, and so
+# on. You should also write an individual final report using the final report template.
+# The Python code and final report should be turned in via Toledo by December 31, 2023 at 18:00 CET.
 
 
 import r0123456
@@ -19,11 +24,10 @@ def run_experiment():
     print("Running experiment with parameters:")
 
     # lr, nb_samples_lambda, numIters, U
-    lr = 0.0001
+    lr = 0.1
     nb_samples_lambda = 100
     numIters = 1000
     U = PlackettLuce.U_identity
-
 
     a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U)
     benchmark = Benchmark(filename, normalize=True)

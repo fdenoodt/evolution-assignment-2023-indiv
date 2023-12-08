@@ -22,82 +22,61 @@ class r0123456:
     def optimize(self, benchmark):
         n = benchmark.permutation_size()
 
-        # fitness function
+        # Fitness function
         f = lambda indiv: (benchmark.compute_fitness(torch.unsqueeze(indiv.clone().detach(), 0))[0])
+
         self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n)
 
-    def test_loss(self, w_log):
-        # mse with ones vector
-        loss = nn.MSELoss()
-        target = torch.ones_like(w_log)
-        return loss(w_log, target)
+    def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n):
+        w_log = torch.zeros(n)  # w is w_tilde
 
-    def test_loss_2(self, sigma):
-        # all sigmas (= permutations) should start with 5
-        mse = nn.MSELoss()
+        # specify data types for numba
+        sigma_best = torch.zeros(n, dtype=torch.int64)
 
-        # target is a permutation with 5 on the first position
-        # target = torch.zeros_like(sigma, dtype=torch.float) # dtype fixes: RuntimeError: "mse_cpu" not implemented for 'Int'
-        target = torch.tensor(2.0)
-
-        return mse(sigma, target)
-
-    def sample_elements_categorical_distr(self, w, nb_samples_lambda):
-        # [ 1/3 1/3 1/3]
-        # sigma = torch.distributions.categorical.Categorical(w).sample()
-        mu = w[0]
-        std = w[1]
-        sigma = torch.normal(mu, std)
-        # sigma = w[0]
-        return sigma
-
-    def optimize_plackett_luce(self, fitness_function, lr, nb_samples_lambda, n):
-        # w_log = torch.zeros(n, requires_grad=True)
-        w_log = torch.ones(n, requires_grad=True)
-
-        sigma_best = torch.zeros(n)  # the best permutation so far
-        best_fitness = torch.inf
+        best_fitness = 0
 
         ctr = 0
         while True:
-            # sample lambda permutations
-            sigmas = self.sample_elements_categorical_distr(w_log, nb_samples_lambda)
+            # Sample from plackett luce
+            delta_w_log_ps = torch.zeros((nb_samples_lambda, n))
+            sigmas = torch.zeros((nb_samples_lambda, n), dtype=torch.int64)
+            fitnesses = torch.zeros(nb_samples_lambda)
 
+            for i in range(nb_samples_lambda):
+                # sample sigma_i from Plackett luce
+                sigmas[i] = PlackettLuce.sample_permutation(torch.exp(w_log))
+                fitnesses[i] = fitness_func(sigmas[i])
 
-            w_log.grad = None
-            # loss = self.test_loss(w_log)
-            loss = self.test_loss_2(sigmas)
-            loss.backward()
+                delta_w_log_ps[i] = PlackettLuce.calc_w_log_p(w_log, sigmas[i])  # returns a vector
 
-            with torch.no_grad():
-                w_log -= lr * w_log.grad
-                # w_log = torch.clamp(w_log, min=0)
+                if fitnesses[i] > best_fitness:
+                    best_fitness = fitnesses[i]
+                    sigma_best = sigmas[i]
 
-            print(w_log)
+            delta_w_log_F = self.pl.calc_w_log_F(w_log, fitnesses,
+                                                 delta_w_log_ps, nb_samples_lambda)
+            w_log = w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
-            # sigmas = torch.zeros((nb_samples_lambda, n), dtype=torch.int)
-            # fitnesses = torch.zeros(nb_samples_lambda)
-            #
-            # for i in range(nb_samples_lambda):
-            #     # sample sigma_i from Plackett luce
-            #     sigmas[i] = self.pl.sample_permutation(torch.exp(w_log))
-            #     fitnesses[i] = fitness_function(sigmas[i])
-            #
-            #     if fitnesses[i] < best_fitness:
-            #         best_fitness = fitnesses[i]
-            #         sigma_best = sigmas[i]
-            #
-            # # w_log = ...
-            #
-            # avg_fitness = torch.mean(fitnesses)
-            # self.utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)
+            avg_fitness = torch.mean(fitnesses)
+
+            print(f"{ctr} \t best fitness: {best_fitness:_.2f}, avg fitness: {avg_fitness / nb_samples_lambda:_.4f}")
+
+            # utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)
             # self.utility.print_array((w_log), ctr, frequency=10)
+            # self.utility.print_array(np.exp(w_log), ctr, frequency=10)
+            # self.utility.print_array(delta_w_log_F, ctr, frequency=10)
+            # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
             ctr += 1
-            if self.utility.is_done(ctr):
-                break
+            # TODO
+            # if numerical problems occurred:
+            #   w = almost degenerate distr with mode at sigma_best
 
-        return best_fitness, sigma_best
+            # if utility.is_done(ctr):
+            #     break
+
+        # return best_fitness, sigma_best
+        return best_fitness
 
 # if __name__ == '__main__':
 # distanceMatrix = np.array([[0, 1, 2, 3, 4],

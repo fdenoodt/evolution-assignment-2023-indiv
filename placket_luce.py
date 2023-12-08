@@ -1,5 +1,5 @@
 import torch
-import numpy as np
+# import numpy as np
 
 class PlackettLuce:
 
@@ -42,36 +42,51 @@ class PlackettLuce:
 
         return adjusted_xs
 
-    def sample_permutation(self, w):
+    @staticmethod
+    def sample_permutation(w):
         n = len(w)
-        sigma = torch.zeros(n, dtype=torch.int)
-        used_nodes = torch.zeros(n, dtype=torch.bool)
+        logits = w  # TODO: maybe expects w_log instead of w
 
-        for i in range(n):
-            node = self.sample_node(w, used_nodes)  # should return one city
-            sigma[i] = node
-            used_nodes[node] = True
+        u = torch.rand(n)
+        g = logits - torch.log(-torch.log(u))
 
-        return sigma
+        # causes numba error:
+        # res = np.argsort(-g, kind='stable') # negativized because descending sorting is required
+        res = torch.argsort(-g)
 
-    def sample_node(self, w, used_nodes):
-        # compute probabilities: its the values in w, except its zero for used nodes
-        probabilities = w.clone()
-        probabilities[used_nodes] = 0
-        probabilities /= torch.sum(
-            probabilities)
+        return res
 
-        # check if probabilities contain NaNs
-        if torch.isnan(probabilities).any():
-            assert False
+    # def sample_permutation(self, w):
+    #     n = len(w)
+    #     sigma = torch.zeros(n, dtype=torch.int)
+    #     used_nodes = torch.zeros(n, dtype=torch.bool)
+    #
+    #     for i in range(n):
+    #         node = self.sample_node(w, used_nodes)  # should return one city
+    #         sigma[i] = node
+    #         used_nodes[node] = True
+    #
+    #     return sigma
+    #
+    # def sample_node(self, w, used_nodes):
+    #     # compute probabilities: its the values in w, except its zero for used nodes
+    #     probabilities = w.clone()
+    #     probabilities[used_nodes] = 0
+    #     probabilities /= torch.sum(
+    #         probabilities)
+    #
+    #     # check if probabilities contain NaNs
+    #     if torch.isnan(probabilities).any():
+    #         assert False
+    #
+    #     # sample from probabilities
+    #     n = len(probabilities)
+    #     node = np.random.choice(n, p=probabilities.numpy())
+    #
+    #     return node
 
-        # sample from probabilities
-        n = len(probabilities)
-        node = np.random.choice(n, p=probabilities.numpy())
-
-        return node
-
-    def calc_w_log_p_partial(self, w_log, sigma, i):
+    @staticmethod
+    def calc_w_log_p_partial(w_log, sigma, i):
         n = len(sigma)
 
         intermediate_result = 0  # calc \Sigma (1/sum)
@@ -84,13 +99,14 @@ class PlackettLuce:
 
         return 1 - torch.exp(w_log[sigma[i]]) * intermediate_result
 
-    def calc_w_log_p(self, w_log, sigma):
+    @staticmethod
+    def calc_w_log_p(w_log, sigma):
         # Calculates all partial derivatives for a sample sigma
         n = len(sigma)
         gradient = torch.zeros_like(w_log)
 
         for i in range(n):
-            gradient[sigma[i]] = self.calc_w_log_p_partial(w_log, sigma, i)
+            gradient[sigma[i]] = PlackettLuce.calc_w_log_p_partial(w_log, sigma, i)
 
         return gradient
 
