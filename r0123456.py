@@ -21,7 +21,8 @@ class r0123456:
         n = benchmark.permutation_size()
 
         # Fitness function
-        f = lambda indiv: (benchmark.compute_fitness(np.expand_dims(indiv, axis=0))[0])
+        # f = lambda indiv: (benchmark.compute_fitness(np.expand_dims(indiv, axis=0))[0])
+        f = benchmark.compute_fitness
 
         self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n)
 
@@ -30,36 +31,29 @@ class r0123456:
 
         # specify data types for numba
         sigma_best = np.zeros(n, dtype=np.int64)
-
         best_fitness = 0
 
         ctr = 0
         while True:
-            # Sample from plackett luce
-            delta_w_log_ps = np.zeros((nb_samples_lambda, n))
-            sigmas = np.zeros((nb_samples_lambda, n), dtype=np.int64)
-            fitnesses = np.zeros(nb_samples_lambda)
+            # Sample sigma_i from Plackett luce
+            sigmas = PlackettLuce.sample_permutations(np.exp(w_log), nb_samples_lambda)
+            fitnesses = fitness_func(sigmas)
 
-            for i in range(nb_samples_lambda):
-                # sample sigma_i from Plackett luce
-                sigmas[i] = PlackettLuce.sample_permutation(np.exp(w_log))
-                fitnesses[i] = fitness_func(sigmas[i])
+            delta_w_log_ps = PlackettLuce.calc_w_log_ps(w_log, sigmas)
 
-                delta_w_log_ps[i] = PlackettLuce.calc_w_log_p(w_log, sigmas[i])  # returns a vector
+            best_idx = np.argmax(fitnesses)
+            if fitnesses[best_idx] > best_fitness:
+                best_fitness = fitnesses[best_idx]
+                sigma_best = sigmas[best_idx]
 
-                if fitnesses[i] > best_fitness:
-                    best_fitness = fitnesses[i]
-                    sigma_best = sigmas[i]
+            delta_w_log_F = PlackettLuce.calc_w_log_F(
+                self.pl.U, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda)
 
-            delta_w_log_F = self.pl.calc_w_log_F(w_log, fitnesses,
-                                                 delta_w_log_ps, nb_samples_lambda)
             w_log = w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
             avg_fitness = np.mean(fitnesses)
 
-            print(f"{ctr} \t best fitness: {best_fitness:_.2f}, avg fitness: {avg_fitness / nb_samples_lambda:_.4f}")
-
-            # utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)
+            self.utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)
             # self.utility.print_array((w_log), ctr, frequency=10)
             # self.utility.print_array(np.exp(w_log), ctr, frequency=10)
             # self.utility.print_array(delta_w_log_F, ctr, frequency=10)
@@ -70,11 +64,10 @@ class r0123456:
             # if numerical problems occurred:
             #   w = almost degenerate distr with mode at sigma_best
 
-            # if utility.is_done(ctr):
-            #     break
+            if self.utility.is_done(ctr):
+                break
 
-        # return best_fitness, sigma_best
-        return best_fitness
+        return best_fitness, sigma_best
 
 # if __name__ == '__main__':
 # distanceMatrix = np.array([[0, 1, 2, 3, 4],

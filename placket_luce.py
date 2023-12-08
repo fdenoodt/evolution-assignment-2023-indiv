@@ -1,4 +1,6 @@
 import numpy as np
+
+
 # import numpy as np
 
 class PlackettLuce:
@@ -56,6 +58,17 @@ class PlackettLuce:
 
         return res
 
+    @staticmethod
+    def sample_permutations(w, nb_samples_lambda):
+        n = len(w)
+        logits = w
+
+        u = np.random.rand(nb_samples_lambda, n)  # shape: (nb_samples_lambda, n)
+        g = logits - np.log(-np.log(u))  # shape: (nb_samples_lambda, n)
+
+        res = np.argsort(-g, axis=1)  # shape: (nb_samples_lambda, n)
+        return res
+
     # def sample_permutation(self, w):
     #     n = len(w)
     #     sigma = np.zeros(n, dtype=np.int)
@@ -100,6 +113,19 @@ class PlackettLuce:
         return 1 - np.exp(w_log[sigma[i]]) * intermediate_result
 
     @staticmethod
+    def calc_w_log_ps(w_log, sigmas):
+        # Calculates all partial derivatives for a list of samples sigmas
+        n = len(sigmas[0])
+        nb_samples_lambda = len(sigmas)
+        gradient = np.zeros((nb_samples_lambda, n))
+
+        for i in range(nb_samples_lambda):
+            for j in range(n):
+                gradient[i][sigmas[i][j]] = PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j)
+
+        return gradient # shape: (nb_samples_lambda, n)
+
+    @staticmethod
     def calc_w_log_p(w_log, sigma):
         # Calculates all partial derivatives for a sample sigma
         n = len(sigma)
@@ -110,10 +136,13 @@ class PlackettLuce:
 
         return gradient
 
-    def calc_w_log_F(self, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
+
+
+    @staticmethod
+    def calc_w_log_F(U, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
         gradient = np.zeros_like(w_log)
 
-        f_vals = self.U(fitnesses)  # list of scalar with len nb_samples_lambda
+        f_vals = U(fitnesses)  # list of scalar with len nb_samples_lambda
         assert len(f_vals) == nb_samples_lambda
         assert len(delta_w_log_ps) == nb_samples_lambda
 
