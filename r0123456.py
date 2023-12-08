@@ -41,18 +41,6 @@ class r0123456:
 
             delta_w_log_ps = PlackettLuce.calc_w_log_ps(w_log, sigmas)
 
-            grad = np.zeros_like(w_log)
-            delta = np.zeros_like(w_log)  # delta is delta_w_log_F
-            for i in range(nb_samples_lambda):
-                assert PlackettLuce.grad_log_prob(grad, sigmas[i], np.exp(w_log))
-
-                for k in range(n):
-                    delta[k] += self.pl.U(fitnesses[i]) * grad[k] / nb_samples_lambda
-                    # TODO: check why authors dont do this
-
-
-            # assert np.allclose(delta_w_log_ps, delta_w_log_ps_fast)
-
             best_idx = np.argmax(fitnesses)
             if fitnesses[best_idx] > best_fitness:
                 best_fitness = fitnesses[best_idx]
@@ -61,7 +49,6 @@ class r0123456:
             delta_w_log_F = PlackettLuce.calc_w_log_F(
                 self.pl.U, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda)
 
-            # w_log = w_log + (lr * delta)  # "+" for maximization, "-" for minimization
             w_log = w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
             avg_fitness = np.mean(fitnesses)

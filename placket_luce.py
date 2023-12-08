@@ -71,33 +71,27 @@ class PlackettLuce:
 
     @staticmethod
     def calc_w_log_p_partial(w_log, sigma, i):
-        n = len(sigma)
-
-        intermediate_result = 0  # calc \Sigma (1/sum)
-        for k in range(i):
-            sum = 0  # calc sum in denominator
-            for j in range(k, n):
-                sum += np.exp(w_log[sigma[j]])
-
-            intermediate_result += 1 / sum
-
-        return 1 - np.exp(w_log[sigma[i]]) * intermediate_result
+        if i > 0:
+            sums = [np.sum(np.exp(w_log[sigma[k:]])) for k in range(i)]
+            intermediate_result = np.sum([1 / sum for sum in sums])
+            return 1 - np.exp(w_log[sigma[i]]) * intermediate_result
+        else:
+            return 1
 
     @staticmethod
     def calc_w_log_ps(w_log, sigmas):
         # Calculates all partial derivatives for a list of samples sigmas
         n = len(sigmas[0])
         nb_samples_lambda = len(sigmas)
+        gradient_old = np.zeros((nb_samples_lambda, n))
         gradient = np.zeros((nb_samples_lambda, n))
 
+        # old way, slow
         for i in range(nb_samples_lambda):
             for j in range(n):
-                # a = PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j)
-                # b = PlackettLuce.calc_w_log_partial_fast(w_log, sigmas[i], j)
-                # assert np.allclose(a, b)
-                gradient[i][sigmas[i][j]] = PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j)
+                gradient_old[i][sigmas[i][j]] = PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j)
 
-        return gradient  # shape: (nb_samples_lambda, n)
+        return gradient_old  # shape: (nb_samples_lambda, n)
 
     import numpy as np
 
@@ -129,20 +123,20 @@ class PlackettLuce:
 
     @staticmethod
     def calc_w_log_F(U, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
-        gradient = np.zeros_like(w_log)
+        # gradient = np.zeros_like(w_log)
 
         f_vals = U(fitnesses)  # list of scalar with len nb_samples_lambda
         assert len(f_vals) == nb_samples_lambda
         assert len(delta_w_log_ps) == nb_samples_lambda
 
         # old way, slow
-        for i in range(nb_samples_lambda):
-            gradient += f_vals[i] * delta_w_log_ps[i]  # scalar * vector
+        # for i in range(nb_samples_lambda):
+        #     gradient += f_vals[i] * delta_w_log_ps[i]  # scalar * vector
 
-        # gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
+        gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
         # f_vals[i] will multiply the i'th row of delta_w_log_ps, then sum over all rows, somehow it works
 
-        gradient /= nb_samples_lambda # ??? maybe this is wrong? i think they dont do it in the code
+        gradient /= nb_samples_lambda  # ??? maybe this is wrong? i think they dont do it in the code
 
         return gradient
 
