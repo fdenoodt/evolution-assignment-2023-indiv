@@ -142,7 +142,7 @@ class PlackettLuce:
         # gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
         # f_vals[i] will multiply the i'th row of delta_w_log_ps, then sum over all rows, somehow it works
 
-        gradient /= nb_samples_lambda
+        gradient /= nb_samples_lambda # ??? maybe this is wrong? i think they dont do it in the code
 
         return gradient
 
