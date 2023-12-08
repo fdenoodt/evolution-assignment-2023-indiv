@@ -91,6 +91,12 @@ class PlackettLuce:
             for j in range(n):
                 gradient_old[i][sigmas[i][j]] = PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j)
 
+            js = np.arange(n)
+            gradient[i, sigmas[i][js]] = np.array(
+                [PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
+
+            assert np.allclose(gradient, gradient_old)
+
         return gradient_old  # shape: (nb_samples_lambda, n)
 
     import numpy as np
