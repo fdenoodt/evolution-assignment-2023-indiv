@@ -39,7 +39,11 @@ class r0123456:
             sigmas = PlackettLuce.sample_permutations(np.exp(w_log), nb_samples_lambda)
             fitnesses = fitness_func(sigmas)
 
-            delta_w_log_ps = PlackettLuce.calc_w_log_ps(w_log, sigmas)
+            # delta_w_log_ps = PlackettLuce.calc_w_log_ps(w_log, sigmas)
+
+            delta_w_log_ps_fast = PlackettLuce.grad_log_prob(w_log, sigmas)
+
+            assert np.allclose(delta_w_log_ps, delta_w_log_ps_fast)
 
             best_idx = np.argmax(fitnesses)
             if fitnesses[best_idx] > best_fitness:

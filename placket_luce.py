@@ -69,35 +69,6 @@ class PlackettLuce:
         res = np.argsort(-g, axis=1)  # shape: (nb_samples_lambda, n)
         return res
 
-    # def sample_permutation(self, w):
-    #     n = len(w)
-    #     sigma = np.zeros(n, dtype=np.int)
-    #     used_nodes = np.zeros(n, dtype=np.bool)
-    #
-    #     for i in range(n):
-    #         node = self.sample_node(w, used_nodes)  # should return one city
-    #         sigma[i] = node
-    #         used_nodes[node] = True
-    #
-    #     return sigma
-    #
-    # def sample_node(self, w, used_nodes):
-    #     # compute probabilities: its the values in w, except its zero for used nodes
-    #     probabilities = w.clone()
-    #     probabilities[used_nodes] = 0
-    #     probabilities /= np.sum(
-    #         probabilities)
-    #
-    #     # check if probabilities contain NaNs
-    #     if np.isnan(probabilities).any():
-    #         assert False
-    #
-    #     # sample from probabilities
-    #     n = len(probabilities)
-    #     node = np.random.choice(n, p=probabilities.numpy())
-    #
-    #     return node
-
     @staticmethod
     def calc_w_log_p_partial(w_log, sigma, i):
         n = len(sigma)
@@ -121,22 +92,40 @@ class PlackettLuce:
 
         for i in range(nb_samples_lambda):
             for j in range(n):
+                # a = PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j)
+                # b = PlackettLuce.calc_w_log_partial_fast(w_log, sigmas[i], j)
+                # assert np.allclose(a, b)
                 gradient[i][sigmas[i][j]] = PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j)
 
-        return gradient # shape: (nb_samples_lambda, n)
+        return gradient  # shape: (nb_samples_lambda, n)
+
+    import numpy as np
 
     @staticmethod
-    def calc_w_log_p(w_log, sigma):
-        # Calculates all partial derivatives for a sample sigma
-        n = len(sigma)
-        gradient = np.zeros_like(w_log)
+    def grad_log_prob(g, x, expw):  # g is the gradient, x is the permutation, expw is the exponentiated w
+        n = len(x)  # 50
+        sIn = np.sum(expw)
+        sOut = 1.0 / sIn
+        g[x[0]] = 1.0 - expw[x[0]] * sOut
 
-        for i in range(n):
-            gradient[sigma[i]] = PlackettLuce.calc_w_log_p_partial(w_log, sigma, i)
+        assert not (
+                np.isinf(sIn) or
+                np.isnan(sIn) or
+                np.isinf(sOut) or
+                np.isnan(sOut) or
+                np.isinf(g[x[0]]) or
+                np.isnan(g[x[0]]))
 
-        return gradient
+        for i in range(1, n):
+            sIn -= expw[x[i - 1]]
+            sOut += 1.0 / sIn
+            g[x[i]] = 1.0 - expw[x[i]] * sOut
 
+            # if np.isinf(sIn) or np.isnan(sIn) or np.isinf(sOut) or np.isnan(sOut) or np.isinf(g[x[i]]) or np.isnan(
+            #         g[x[i]]):
+            #     return False
 
+        return True  # If here, everything was ok
 
     @staticmethod
     def calc_w_log_F(U, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
@@ -156,3 +145,28 @@ class PlackettLuce:
         gradient /= nb_samples_lambda
 
         return gradient
+
+
+if __name__ == "__main__":
+    # Example usage
+    n = 5
+    expw = np.random.rand(n)  # Replace this with your actual data
+    x = np.random.permutation(n)  # Example ranking
+    g = np.zeros_like(expw, dtype=float)
+
+    success = PlackettLuce.grad_log_prob(g, x, expw)
+
+    grad2 = PlackettLuce.calc_w_log_ps(np.log(expw), np.array([x]))
+
+    assert np.allclose(g, grad2[0])
+
+    if success:
+        print("Gradient computation successful.")
+        print("Gradient values:", g)
+    else:
+        print("Error encountered during gradient computation.")
+
+    # # test calc_w_log_ps
+    # w_log = np.array([1, 2, 3])
+    # sigmas = np.array([[0, 1, 2], [1, 0, 2]])
+    # gradients = PlackettLuce.calc_w_log_ps(w_log, sigmas)
