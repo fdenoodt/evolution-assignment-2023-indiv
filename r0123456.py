@@ -2,9 +2,7 @@ import reporter as Reporter
 from placket_luce import PlackettLuce
 from utility import Utility
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+import numpy as np
 
 
 class r0123456:
@@ -23,28 +21,28 @@ class r0123456:
         n = benchmark.permutation_size()
 
         # Fitness function
-        f = lambda indiv: (benchmark.compute_fitness(torch.unsqueeze(indiv.clone().detach(), 0))[0])
+        f = lambda indiv: (benchmark.compute_fitness(np.expand_dims(indiv, axis=0))[0])
 
         self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n)
 
     def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n):
-        w_log = torch.zeros(n)  # w is w_tilde
+        w_log = np.zeros(n)  # w is w_tilde
 
         # specify data types for numba
-        sigma_best = torch.zeros(n, dtype=torch.int64)
+        sigma_best = np.zeros(n, dtype=np.int64)
 
         best_fitness = 0
 
         ctr = 0
         while True:
             # Sample from plackett luce
-            delta_w_log_ps = torch.zeros((nb_samples_lambda, n))
-            sigmas = torch.zeros((nb_samples_lambda, n), dtype=torch.int64)
-            fitnesses = torch.zeros(nb_samples_lambda)
+            delta_w_log_ps = np.zeros((nb_samples_lambda, n))
+            sigmas = np.zeros((nb_samples_lambda, n), dtype=np.int64)
+            fitnesses = np.zeros(nb_samples_lambda)
 
             for i in range(nb_samples_lambda):
                 # sample sigma_i from Plackett luce
-                sigmas[i] = PlackettLuce.sample_permutation(torch.exp(w_log))
+                sigmas[i] = PlackettLuce.sample_permutation(np.exp(w_log))
                 fitnesses[i] = fitness_func(sigmas[i])
 
                 delta_w_log_ps[i] = PlackettLuce.calc_w_log_p(w_log, sigmas[i])  # returns a vector
@@ -57,7 +55,7 @@ class r0123456:
                                                  delta_w_log_ps, nb_samples_lambda)
             w_log = w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
-            avg_fitness = torch.mean(fitnesses)
+            avg_fitness = np.mean(fitnesses)
 
             print(f"{ctr} \t best fitness: {best_fitness:_.2f}, avg fitness: {avg_fitness / nb_samples_lambda:_.4f}")
 

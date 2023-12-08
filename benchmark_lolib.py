@@ -1,5 +1,6 @@
-import torch
 import numpy as np
+import numpy as np
+
 
 class Benchmark:
     def __init__(self, filename, normalize=False):
@@ -11,7 +12,7 @@ class Benchmark:
     def normalize_matrix(self, matrix):
         # normalize distance matrix to be between 0 and 1
         # it makes the w's smaller and thus less likely to overflow
-        constant = torch.max(matrix)
+        constant = np.max(matrix)
         distanceMatrix = matrix / constant
         return distanceMatrix, constant
 
@@ -33,8 +34,6 @@ class Benchmark:
 
         matrix = data.reshape((dim, dim))
 
-        # to tensor
-        matrix = torch.tensor(matrix, dtype=torch.int32) #float32
         return matrix
 
     def compute_fitness(self, population):
@@ -59,8 +58,7 @@ class Benchmark:
 
             fitnesses.append(fitness)
 
-        # return np.array(fitnesses)
-        return torch.tensor(fitnesses, dtype=torch.float32)
+        return np.array(fitnesses, dtype=np.float32)
 
 
 if __name__ == '__main__':
