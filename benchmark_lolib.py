@@ -37,10 +37,10 @@ class Benchmark:
         return matrix
 
     def compute_fitness(self, population):
-        return Benchmark.compute_fitness_static(self.matrix, population)
+        return Benchmark.compute_fitness_static_fastest(self.matrix, population)
 
     @staticmethod
-    def compute_fitness_static(matrix, population):
+    def compute_fitness_static_slow(matrix, population):
         # shape: (populationSize, numCities)
         # eg population: [[1,2,3,4,5],[1,2,3,4,5], ... ]
 
@@ -49,16 +49,38 @@ class Benchmark:
         n = len(population[0])
         for indiv_idx in range(popul_size):  # iterate over population
             individual = population[indiv_idx]
-            fitness = 0
 
+            fitness = 0
             for i in range(n - 1):
                 for j in range(i + 1, n):
                     fitness += matrix[individual[i]][individual[j]]
-                    # fitness += self.matrix[int(individual[i])][int(individual[j])]
 
             fitnesses.append(fitness)
 
         return np.array(fitnesses, dtype=np.float32)
+
+    @staticmethod
+    def compute_fitness_static_fast(matrix, population):
+        population_size, num_cities = population.shape
+        fitnesses = np.zeros(population_size, dtype=np.float32)
+
+        for i in range(num_cities - 1):
+            for j in range(i + 1, num_cities):
+                fitnesses += matrix[population[:, i], population[:, j]]
+
+        return fitnesses
+
+    @staticmethod
+    def compute_fitness_static_fastest(matrix, population):
+        num_cities = population.shape[1]
+
+        # Create indices for all pairs of cities
+        indices_i, indices_j = np.triu_indices(num_cities, k=1)
+
+        # Use advanced indexing to calculate fitness for all pairs of cities simultaneously
+        fitnesses = np.sum(matrix[population[:, indices_i], population[:, indices_j]], axis=1)
+
+        return fitnesses.astype(np.float32)
 
 
 if __name__ == '__main__':
@@ -67,5 +89,5 @@ if __name__ == '__main__':
     # time the function's performance
     import timeit
 
-    print(timeit.timeit(lambda: be75eec.compute_fitness(population), number=1000))
-    print(timeit.timeit(lambda: be75eec.compute_fitness(population), number=1000))
+    print(timeit.timeit(lambda: be75eec.compute_fitness(population), number=10))
+    print(timeit.timeit(lambda: be75eec.compute_fitness(population), number=10))

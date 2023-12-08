@@ -45,15 +45,12 @@ class PlackettLuce:
         return adjusted_xs
 
     @staticmethod
-    def sample_permutation(w):
+    def sample_permutation(w):  # gumbell trick
         n = len(w)
         logits = w  # TODO: maybe expects w_log instead of w
 
         u = np.random.rand(n)
         g = logits - np.log(-np.log(u))
-
-        # causes numba error:
-        # res = np.argsort(-g, kind='stable') # negativized because descending sorting is required
         res = np.argsort(-g)
 
         return res
@@ -79,31 +76,25 @@ class PlackettLuce:
             return 1
 
     @staticmethod
-    def inner_loop(i, sigmas, w_log, nb_samples_lambda, n):
+    def inner_loop(i, sigmas, w_log, n):
         js = np.arange(n)
         gradient = np.zeros_like(w_log)
         gradient[sigmas[i][js]] = np.array(
             [PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
         return gradient
-        # js = np.arange(n)
-        # gradient[i, sigmas[i][js]] = np.array(
-        #     [PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
 
     @staticmethod
     def calc_w_log_ps(w_log, sigmas):
         # Calculates all partial derivatives for a list of samples sigmas
         n = len(sigmas[0])
         nb_samples_lambda = len(sigmas)
-        gradient_old = np.zeros((nb_samples_lambda, n))
 
         gradients = np.zeros((nb_samples_lambda, n))
         iss = np.arange(nb_samples_lambda)
         gradients[iss] = np.array(
-            [PlackettLuce.inner_loop(i, sigmas, w_log, nb_samples_lambda, n) for i in range(nb_samples_lambda)])
+            [PlackettLuce.inner_loop(i, sigmas, w_log, n) for i in range(nb_samples_lambda)])
 
         return gradients  # shape: (nb_samples_lambda, n)
-
-    import numpy as np
 
     @staticmethod
     def grad_log_prob(g, x, expw):  # g is the gradient, x is the permutation, expw is the exponentiated w
