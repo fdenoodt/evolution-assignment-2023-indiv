@@ -79,25 +79,29 @@ class PlackettLuce:
             return 1
 
     @staticmethod
+    def inner_loop(i, sigmas, w_log, nb_samples_lambda, n):
+        js = np.arange(n)
+        gradient = np.zeros_like(w_log)
+        gradient[sigmas[i][js]] = np.array(
+            [PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
+        return gradient
+        # js = np.arange(n)
+        # gradient[i, sigmas[i][js]] = np.array(
+        #     [PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
+
+    @staticmethod
     def calc_w_log_ps(w_log, sigmas):
         # Calculates all partial derivatives for a list of samples sigmas
         n = len(sigmas[0])
         nb_samples_lambda = len(sigmas)
         gradient_old = np.zeros((nb_samples_lambda, n))
-        gradient = np.zeros((nb_samples_lambda, n))
 
-        # old way, slow
-        for i in range(nb_samples_lambda):
-            for j in range(n):
-                gradient_old[i][sigmas[i][j]] = PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j)
+        gradients = np.zeros((nb_samples_lambda, n))
+        iss = np.arange(nb_samples_lambda)
+        gradients[iss] = np.array(
+            [PlackettLuce.inner_loop(i, sigmas, w_log, nb_samples_lambda, n) for i in range(nb_samples_lambda)])
 
-            js = np.arange(n)
-            gradient[i, sigmas[i][js]] = np.array(
-                [PlackettLuce.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
-
-            assert np.allclose(gradient, gradient_old)
-
-        return gradient_old  # shape: (nb_samples_lambda, n)
+        return gradients  # shape: (nb_samples_lambda, n)
 
     import numpy as np
 
