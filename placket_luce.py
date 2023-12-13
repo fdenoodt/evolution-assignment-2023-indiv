@@ -30,6 +30,16 @@ class VanillaPdf(PdfRepresentation):
         res = np.argsort(-g, axis=1)  # shape: (nb_samples_lambda, n)
         return res
 
+    def sample_permutation(self, w):
+        n = len(w)
+        probabilities = w / np.sum(w)
+        permutation = np.random.choice(n, size=n, replace=False, p=probabilities)
+        return permutation
+
+    def sample_permutations_slow(self, w, nb_samples_lambda):
+        permutations = np.array([self.sample_permutation(w) for _ in range(nb_samples_lambda)])
+        return permutations
+
     @staticmethod
     def calc_w_log_p_partial(w_log, sigma, i):
         if i > 0:
@@ -129,6 +139,17 @@ class PlackettLuce:
 
 
 if __name__ == "__main__":
+    # test sample_permutations
+    n = 5
+    # w = np.random.rand(n)
+    w = np.array([1, 110, 220, 455, 999])
+    pdf = VanillaPdf(n)
+    sigmas = pdf.sample_permutations(w, 10)
+    print(sigmas)
+
+    sigmas2 = pdf.sample_permutations_slow(w, 10)
+    print(sigmas2)
+
     # Example usage
     # n = 5
     # expw = np.random.rand(n)  # Replace this with your actual data
@@ -152,13 +173,13 @@ if __name__ == "__main__":
     # sigmas = np.array([[0, 1, 2], [1, 0, 2]])
     # gradients = PlackettLuce.calc_w_log_ps(w_log, sigmas)
 
-    # test calc_gradients in PlackettLuce
-    n = 5
-    expw = np.random.rand(n)  # Replace this with your actual data
-    x = np.random.permutation(n)  # Example ranking
-    g = np.zeros_like(expw, dtype=float)
-
-    pdf = VanillaPdf(n)
-
-    gradients = pdf.calc_gradients(np.log(expw), np.array([x]))
-    print(gradients)
+    # # test calc_gradients in PlackettLuce
+    # n = 5
+    # expw = np.random.rand(n)  # Replace this with your actual data
+    # x = np.random.permutation(n)  # Example ranking
+    # g = np.zeros_like(expw, dtype=float)
+    #
+    # pdf = VanillaPdf(n)
+    #
+    # gradients = pdf.calc_gradients(np.log(expw), np.array([x]))
+    # print(gradients)

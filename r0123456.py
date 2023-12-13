@@ -31,7 +31,10 @@ class r0123456:
 
         ctr = 0
         while True:
+
             # Sample sigma_i from Plackett luce
+
+            # TODO: FOR SOME REASON sample_permutations_slow (my implementation) doesn't converge within same iterations
             sigmas = pdf.sample_permutations(np.exp(w_log), nb_samples_lambda)
             fitnesses = fitness_func(sigmas)
 
