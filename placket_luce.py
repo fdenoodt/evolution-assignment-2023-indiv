@@ -4,26 +4,33 @@ import numpy as np
 
 
 class PdfRepresentation(ABC):
-    def __init__(self, n):
+    def __init__(self, n, w_log):
         self.n = n
+        self.w_log = w_log
 
     @abstractmethod
-    def sample_permutations(self, w, nb_samples_lambda):
+    def sample_permutations(self, nb_samples_lambda):
         pass
 
     @abstractmethod
-    def calc_gradients(self, w_log, sigmas):
+    def calc_gradients(self, sigmas):
+        pass
+
+    @abstractmethod
+    def update_w_log(self, delta_w_log_F, lr):
         pass
 
 
 class VanillaPdf(PdfRepresentation):
     def __init__(self, n):
-        super().__init__(n)
+        w_log = np.zeros(n)  # w is w_tilde
 
-    def sample_permutations(self, w, nb_samples_lambda):
-        n = len(w)
-        logits = np.log(w)  # shape: (n,)
-        # TODO: np.log is correct, however without it, it converges faster!
+        super().__init__(n, w_log)
+
+    def sample_permutations(self, nb_samples_lambda):
+        logits = self.w_log  # shape: (n,)
+        # TODO: w_log is correct, but np.exp(w_log) results in much faster convergence
+        n = len(logits)
 
         u = np.random.rand(nb_samples_lambda, n)  # shape: (nb_samples_lambda, n)
         g = logits - np.log(-np.log(u))  # shape: (nb_samples_lambda, n)
@@ -31,14 +38,15 @@ class VanillaPdf(PdfRepresentation):
         res = np.argsort(-g, axis=1)  # shape: (nb_samples_lambda, n)
         return res
 
-    def sample_permutation(self, w):
+    def sample_permutation(self):
+        w = np.exp(self.w_log)
         n = len(w)
         probabilities = w / np.sum(w)
         permutation = np.random.choice(n, size=n, replace=False, p=probabilities)
         return permutation
 
     def sample_permutations_slow(self, w, nb_samples_lambda):
-        permutations = np.array([self.sample_permutation(w) for _ in range(nb_samples_lambda)])
+        permutations = np.array([self.sample_permutation() for _ in range(nb_samples_lambda)])
         return permutations
 
     @staticmethod
@@ -71,14 +79,33 @@ class VanillaPdf(PdfRepresentation):
 
         return gradients  # shape: (nb_samples_lambda, n)
 
-    def calc_gradients(self, w_log, sigmas):
+    def calc_gradients(self, sigmas):
         """
         Calculates the gradient of the log probability of the Plackett-Luce model
         :param w_log: log of the weights (length n)
         :param sigmas: list of sampled permutations (length nb_samples_lambda)
         :return: gradient of the log probability of the Plackett-Luce model. Shape: (nb_samples_lambda, n)
         """
-        return VanillaPdf.calc_w_log_ps(w_log, sigmas)
+        return VanillaPdf.calc_w_log_ps(self.w_log, sigmas)
+
+    def update_w_log(self, delta_w_log_F, lr):
+        self.w_log = self.w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
+
+
+class ConditionalPdf(PdfRepresentation):
+    def __init__(self, n):
+        w_log = np.zeros((n, n))
+        super().__init__((n, n), w_log)
+
+    def sample_permutations(self, nb_samples_lambda):
+        pass
+
+    def calc_gradients(self, sigmas):
+        n = len(sigmas[0])
+        nb_samples_lambda = len(sigmas)
+
+        gradients = np.zeros((nb_samples_lambda, n))
+        return gradients  # shape (nb_samples_lambda, n)
 
 
 class PlackettLuce:
@@ -126,9 +153,7 @@ class PlackettLuce:
         return adjusted_xs
 
     @staticmethod
-    def calc_w_log_F(U, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
-        # gradient = np.zeros_like(w_log)
-
+    def calc_w_log_F(U, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
         f_vals = U(fitnesses)  # list of scalar with len nb_samples_lambda
         assert len(f_vals) == nb_samples_lambda
         assert len(delta_w_log_ps) == nb_samples_lambda

@@ -23,7 +23,6 @@ class r0123456:
         self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n, pdf)
 
     def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n, pdf):
-        w_log = np.zeros(n)  # w is w_tilde
 
         # specify data types for numba
         sigma_best = np.zeros(n, dtype=np.int64)
@@ -35,10 +34,10 @@ class r0123456:
             # Sample sigma_i from Plackett luce
 
             # TODO: FOR SOME REASON sample_permutations_slow (my implementation) doesn't converge within same iterations
-            sigmas = pdf.sample_permutations(np.exp(w_log), nb_samples_lambda)
+            sigmas = pdf.sample_permutations(nb_samples_lambda)
             fitnesses = fitness_func(sigmas)
 
-            delta_w_log_ps = pdf.calc_gradients(w_log, sigmas)
+            delta_w_log_ps = pdf.calc_gradients(sigmas)
 
             best_idx = np.argmax(fitnesses)
             if fitnesses[best_idx] > best_fitness:
@@ -46,9 +45,9 @@ class r0123456:
                 sigma_best = sigmas[best_idx]
 
             delta_w_log_F = PlackettLuce.calc_w_log_F(
-                self.pl.U, w_log, fitnesses, delta_w_log_ps, nb_samples_lambda)
+                self.pl.U, fitnesses, delta_w_log_ps, nb_samples_lambda)
 
-            w_log = w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
+            pdf.update_w_log(delta_w_log_F, lr)
 
             avg_fitness = np.mean(fitnesses)
 
