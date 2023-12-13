@@ -4,7 +4,7 @@ from abstract_benchmark import AbstractBenchmark
 
 
 class Benchmark(AbstractBenchmark):
-    def __init__(self, filename, normalize=False, replace_inf_with_large_val=True):
+    def __init__(self, filename, normalize, maximise, replace_inf_with_large_val=True):
         # Read distance matrix from file.
         file = open(filename)
         _matrix = np.loadtxt(file, delimiter=",")
@@ -13,7 +13,7 @@ class Benchmark(AbstractBenchmark):
         if replace_inf_with_large_val:
             _matrix = Benchmark.replace_inf_with_large_val(_matrix)
 
-        super().__init__(_matrix, normalize)
+        super().__init__(_matrix, normalize, maximise)
 
     @staticmethod
     def replace_inf_with_large_val(distanceMatrix):

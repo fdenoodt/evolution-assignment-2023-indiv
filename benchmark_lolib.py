@@ -5,9 +5,9 @@ from abstract_benchmark import AbstractBenchmark
 
 
 class Benchmark(AbstractBenchmark):
-    def __init__(self, filename, normalize=False):
+    def __init__(self, filename, normalize, maximise):
         _matrix = self.read_matrix_from_file(filename)
-        super().__init__(_matrix, normalize)
+        super().__init__(_matrix, normalize, maximise)
 
     def read_dimensions_from_file(self, file_path):
         with open(file_path, 'r') as file:

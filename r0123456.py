@@ -1,12 +1,12 @@
 import reporter as Reporter
-from placket_luce import PlackettLuce
+from placket_luce import PlackettLuce, PdfRepresentation
 from utility import Utility
 
 import numpy as np
 
 
 class r0123456:
-    def __init__(self, lr, nb_samples_lambda, numIters, U):
+    def __init__(self, lr, nb_samples_lambda, numIters, U, benchmark):
         self.reporter = Reporter.Reporter(self.__class__.__name__)
         self.keep_running_until_timeup = True
         self.numIters = numIters
@@ -15,18 +15,14 @@ class r0123456:
         self.nb_samples_lambda = nb_samples_lambda
 
         self.utility = Utility(self.reporter, self.keep_running_until_timeup, self.numIters)
-        self.pl = PlackettLuce(U)
+        self.pl = PlackettLuce(U, benchmark)
 
-    def optimize(self, benchmark):
-        n = benchmark.permutation_size()
+    def optimize(self, pdf):
+        n = self.pl.benchmark.permutation_size()
+        f = self.pl.benchmark.compute_fitness
+        self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n, pdf)
 
-        # Fitness function
-        # f = lambda indiv: (benchmark.compute_fitness(np.expand_dims(indiv, axis=0))[0])
-        f = benchmark.compute_fitness
-
-        self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n)
-
-    def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n):
+    def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n, pdf):
         w_log = np.zeros(n)  # w is w_tilde
 
         # specify data types for numba
@@ -36,10 +32,10 @@ class r0123456:
         ctr = 0
         while True:
             # Sample sigma_i from Plackett luce
-            sigmas = PlackettLuce.sample_permutations(np.exp(w_log), nb_samples_lambda)
+            sigmas = pdf.sample_permutations(np.exp(w_log), nb_samples_lambda)
             fitnesses = fitness_func(sigmas)
 
-            delta_w_log_ps = PlackettLuce.calc_w_log_ps(w_log, sigmas)
+            delta_w_log_ps = pdf.calc_gradients(w_log, sigmas)
 
             best_idx = np.argmax(fitnesses)
             if fitnesses[best_idx] > best_fitness:

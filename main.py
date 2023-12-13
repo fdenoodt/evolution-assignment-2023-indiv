@@ -15,9 +15,9 @@
 import r0123456
 import numpy as np
 
-# from benchmark_lolib import Benchmark
-from benchmark_tsp import Benchmark
-from placket_luce import PlackettLuce
+from benchmark_lolib import Benchmark
+# from benchmark_tsp import Benchmark
+from placket_luce import PlackettLuce, VanillaPdf, PdfRepresentation
 
 
 def run_experiment():
@@ -30,9 +30,10 @@ def run_experiment():
     numIters = 1000
     U = PlackettLuce.U_identity
 
-    a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U)
-    benchmark = Benchmark(filename, normalize=True)
-    best_fitness = a.optimize(benchmark)
+    benchmark = Benchmark(filename, normalize=True, maximise=True)
+    a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U, benchmark)
+    pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
+    best_fitness = a.optimize(pdf)
 
     return best_fitness
 
@@ -40,8 +41,8 @@ def run_experiment():
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    filename = "./tour50.csv"
-    # filename = "./benchmarks/be75eec.mat"
+    # filename = "./tour50.csv"
+    filename = "./benchmarks/be75eec.mat"
 
     # Set parameters
     run_experiment()

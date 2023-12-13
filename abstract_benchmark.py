@@ -5,9 +5,10 @@ import numpy as np
 # abstract base class for Benchmark
 
 class AbstractBenchmark(ABC):
-    def __init__(self, matrix, normalize):
+    def __init__(self, matrix, normalize, maximise):
         self.normalizing_constant = 1
         self.matrix = matrix
+        self.maximise = maximise
         if normalize:
             self.matrix, self.normalizing_constant = AbstractBenchmark.normalize_matrix(self.matrix)
 
