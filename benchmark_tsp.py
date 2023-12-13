@@ -1,20 +1,22 @@
 import numpy as np
 
+from abstract_benchmark import AbstractBenchmark
 
-class Benchmark:
-    def __init__(self, filename):
+
+class Benchmark(AbstractBenchmark):
+    def __init__(self, filename, normalize=False, replace_inf_with_large_val=True):
         # Read distance matrix from file.
         file = open(filename)
-        distanceMatrix = np.loadtxt(file, delimiter=",")
+        _matrix = np.loadtxt(file, delimiter=",")
         file.close()
 
-        distanceMatrix = self.replace_inf_with_large_val(distanceMatrix)
-        self.distanceMatrix = self.normalize_distance_matrix(distanceMatrix)
+        if replace_inf_with_large_val:
+            _matrix = Benchmark.replace_inf_with_large_val(_matrix)
 
-    def permutation_size(self):
-        return self.distanceMatrix.shape[0]
+        super().__init__(_matrix, normalize)
 
-    def replace_inf_with_large_val(self, distanceMatrix):
+    @staticmethod
+    def replace_inf_with_large_val(distanceMatrix):
         # replace inf with largest non inf value * max number of cities
         # just max is not enough, needs to make sure that worst possible path is still better than a single inf
         largest_value = np.max(distanceMatrix[distanceMatrix != np.inf]) * len(distanceMatrix)
@@ -23,12 +25,6 @@ class Benchmark:
         # faster for the start, finds existing solutions quicker but in long run not that much impact
 
         print("largest non inf val: ", largest_value)
-        return distanceMatrix
-
-    def normalize_distance_matrix(self, distanceMatrix):
-        # normalize distance matrix to be between 0 and 1
-        # it makes the w's smaller and thus less likely to overflow
-        distanceMatrix = distanceMatrix / np.max(distanceMatrix)
         return distanceMatrix
 
     def compute_fitness(self, population):  # slow, but easy to understand
@@ -42,7 +38,7 @@ class Benchmark:
             for j in range(len(individual)):
                 city = individual[j]
                 nextCity = individual[(j + 1) % len(individual)]
-                fitness += self.distanceMatrix[int(city)][int(nextCity)]
+                fitness += self.matrix[int(city)][int(nextCity)]
 
             fitnesses.append(fitness)
         return np.array(fitnesses)

@@ -1,23 +1,13 @@
 import numpy as np
 import numpy as np
 
+from abstract_benchmark import AbstractBenchmark
 
-class Benchmark:
+
+class Benchmark(AbstractBenchmark):
     def __init__(self, filename, normalize=False):
-        self.matrix = self.read_matrix_from_file(filename)
-        self.normalizing_constant = 1
-        if normalize:
-            self.matrix, self.normalizing_constant = self.normalize_matrix(self.matrix)
-
-    def normalize_matrix(self, matrix):
-        # normalize distance matrix to be between 0 and 1
-        # it makes the w's smaller and thus less likely to overflow
-        constant = np.max(matrix)
-        distanceMatrix = matrix / constant
-        return distanceMatrix, constant
-
-    def permutation_size(self):
-        return self.matrix.shape[0]
+        _matrix = self.read_matrix_from_file(filename)
+        super().__init__(_matrix, normalize)
 
     def read_dimensions_from_file(self, file_path):
         with open(file_path, 'r') as file:
@@ -33,42 +23,10 @@ class Benchmark:
         assert rows * cols == dim * dim
 
         matrix = data.reshape((dim, dim))
-
         return matrix
 
     def compute_fitness(self, population):
         return Benchmark.compute_fitness_static_fastest(self.matrix, population)
-
-    @staticmethod
-    def compute_fitness_static_slow(matrix, population):
-        # shape: (populationSize, numCities)
-        # eg population: [[1,2,3,4,5],[1,2,3,4,5], ... ]
-
-        fitnesses = []
-        popul_size = len(population)
-        n = len(population[0])
-        for indiv_idx in range(popul_size):  # iterate over population
-            individual = population[indiv_idx]
-
-            fitness = 0
-            for i in range(n - 1):
-                for j in range(i + 1, n):
-                    fitness += matrix[individual[i]][individual[j]]
-
-            fitnesses.append(fitness)
-
-        return np.array(fitnesses, dtype=np.float32)
-
-    @staticmethod
-    def compute_fitness_static_fast(matrix, population):
-        population_size, num_cities = population.shape
-        fitnesses = np.zeros(population_size, dtype=np.float32)
-
-        for i in range(num_cities - 1):
-            for j in range(i + 1, num_cities):
-                fitnesses += matrix[population[:, i], population[:, j]]
-
-        return fitnesses
 
     @staticmethod
     def compute_fitness_static_fastest(matrix, population):
@@ -79,7 +37,6 @@ class Benchmark:
 
         # Use advanced indexing to calculate fitness for all pairs of cities simultaneously
         fitnesses = np.sum(matrix[population[:, indices_i], population[:, indices_j]], axis=1)
-
         return fitnesses.astype(np.float32)
 
 
