@@ -22,7 +22,8 @@ class VanillaPdf(PdfRepresentation):
 
     def sample_permutations(self, w, nb_samples_lambda):
         n = len(w)
-        logits = w
+        logits = np.log(w)  # shape: (n,)
+        # TODO: np.log is correct, however without it, it converges faster!
 
         u = np.random.rand(nb_samples_lambda, n)  # shape: (nb_samples_lambda, n)
         g = logits - np.log(-np.log(u))  # shape: (nb_samples_lambda, n)
@@ -142,7 +143,8 @@ if __name__ == "__main__":
     # test sample_permutations
     n = 5
     # w = np.random.rand(n)
-    w = np.array([1, 110, 220, 455, 999])
+    # w = np.array([1, 110, 220, 455, 999])
+    w = np.array([1, 1.1, 1.2, 1.3, 4])
     pdf = VanillaPdf(n)
     sigmas = pdf.sample_permutations(w, 10)
     print(sigmas)
