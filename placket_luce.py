@@ -110,7 +110,14 @@ class ConditionalPdf(PdfRepresentation):
             assert w_log.shape == (n, n)
         super().__init__(n, w_log)
 
-    def sample_permutation_given(self, j):
+    def sample_node_given(self, j, permutation_so_far, L):
+        """
+        Samples a permutation given the previous node
+        :param j: the previously sampled node
+        :param permutation_so_far: the permutation so far, i.e. the first L-1 nodes.
+        Those nodes are fixed and will not be sampled again.
+        """
+
         # w_log_giv_j = self.w_log[:, j]
         # w_giv_j = np.exp(w_log_giv_j)
         # n = len(w_giv_j)
@@ -121,6 +128,10 @@ class ConditionalPdf(PdfRepresentation):
         # return only single node
         w_log_giv_j = self.w_log[:, j]
         w_giv_j = np.exp(w_log_giv_j)
+
+        # remove nodes that are already in the permutation
+        w_giv_j[permutation_so_far] = 0
+
         probabilities = w_giv_j / np.sum(w_giv_j)
         # sample one node from the marginal distribution
         node = np.random.choice(self.n, size=1, replace=False, p=probabilities)[0]
@@ -142,7 +153,7 @@ class ConditionalPdf(PdfRepresentation):
         permutation = np.zeros(self.n, dtype=int)
         permutation[0] = self.sample_permutation_marginal()
         for i in range(1, self.n):
-            permutation[i] = self.sample_permutation_given(permutation[i - 1])
+            permutation[i] = self.sample_node_given(permutation[i - 1], permutation[:i], i)
         return permutation
 
         # TODO:
