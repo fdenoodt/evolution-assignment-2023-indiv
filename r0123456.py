@@ -32,8 +32,6 @@ class r0123456:
         while True:
 
             # Sample sigma_i from Plackett luce
-
-            # TODO: FOR SOME REASON sample_permutations_slow (my implementation) doesn't converge within same iterations
             sigmas = pdf.sample_permutations(nb_samples_lambda)
             fitnesses = fitness_func(sigmas)
 

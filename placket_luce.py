@@ -22,8 +22,14 @@ class PdfRepresentation(ABC):
 
 
 class VanillaPdf(PdfRepresentation):
-    def __init__(self, n):
-        w_log = np.zeros(n)  # w is w_tilde
+    def __init__(self, n, w_log=None):
+        if w_log is None:
+            w_log = np.zeros(n)  # w is w_tilde
+            print("*" * 80)
+            print("w_log is None, initializing with zeros!")
+            print("*" * 80)
+        else:
+            assert len(w_log) == n
 
         super().__init__(n, w_log)
 
@@ -45,7 +51,7 @@ class VanillaPdf(PdfRepresentation):
         permutation = np.random.choice(n, size=n, replace=False, p=probabilities)
         return permutation
 
-    def sample_permutations_slow(self, w, nb_samples_lambda):
+    def sample_permutations_slow(self, nb_samples_lambda):
         permutations = np.array([self.sample_permutation() for _ in range(nb_samples_lambda)])
         return permutations
 
@@ -93,12 +99,58 @@ class VanillaPdf(PdfRepresentation):
 
 
 class ConditionalPdf(PdfRepresentation):
-    def __init__(self, n):
-        w_log = np.zeros((n, n))
-        super().__init__((n, n), w_log)
+    def __init__(self, n, w_log=None):
+        # W[i, j] is P(i | j)
+        if w_log is None:
+            w_log = np.zeros((n, n))
+            print("*" * 80)
+            print("w_log is None, initializing with zeros!")
+            print("*" * 80)
+        else:
+            assert w_log.shape == (n, n)
+        super().__init__(n, w_log)
+
+    def sample_permutation_given(self, j):
+        # w_log_giv_j = self.w_log[:, j]
+        # w_giv_j = np.exp(w_log_giv_j)
+        # n = len(w_giv_j)
+        # probabilities = w_giv_j / np.sum(w_giv_j)
+        # permutation = np.random.choice(n, size=n, replace=False, p=probabilities)
+        # return permutation
+
+        # return only single node
+        w_log_giv_j = self.w_log[:, j]
+        w_giv_j = np.exp(w_log_giv_j)
+        probabilities = w_giv_j / np.sum(w_giv_j)
+        # sample one node from the marginal distribution
+        node = np.random.choice(self.n, size=1, replace=False, p=probabilities)[0]
+        return node
+
+    def sample_permutation_marginal(self):
+        # need to calc For all i: P(i) = sum_j P(i | j) // bayes factorization
+        p_is = np.zeros(self.n)
+        for i in range(self.n):
+            p_is[i] = np.sum(np.exp(self.w_log[i, :]))
+
+        probabilities = p_is / np.sum(p_is)
+
+        # sample one node from the marginal distribution
+        permutation = np.random.choice(self.n, size=1, replace=False, p=probabilities)[0]
+        return permutation
+
+    def sample_permutation(self):
+        permutation = np.zeros(self.n, dtype=int)
+        permutation[0] = self.sample_permutation_marginal()
+        for i in range(1, self.n):
+            permutation[i] = self.sample_permutation_given(permutation[i - 1])
+        return permutation
+
+        # TODO:
+        # permutation[1:] = self.sample_permutation_given(permutation[:-1])
 
     def sample_permutations(self, nb_samples_lambda):
-        pass
+        permutations = np.array([self.sample_permutation() for _ in range(nb_samples_lambda)])
+        return permutations
 
     def calc_gradients(self, sigmas):
         n = len(sigmas[0])
@@ -106,6 +158,11 @@ class ConditionalPdf(PdfRepresentation):
 
         gradients = np.zeros((nb_samples_lambda, n))
         return gradients  # shape (nb_samples_lambda, n)
+
+    def update_w_log(self, delta_w_log_F, lr):
+        # self.w_log = self.w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
+        # not implemented yet exception
+        raise NotImplementedError
 
 
 class PlackettLuce:
@@ -167,15 +224,20 @@ class PlackettLuce:
 if __name__ == "__main__":
     # test sample_permutations
     n = 5
-    # w = np.random.rand(n)
-    # w = np.array([1, 110, 220, 455, 999])
-    w = np.array([1, 1.1, 1.2, 1.3, 4])
-    pdf = VanillaPdf(n)
-    sigmas = pdf.sample_permutations(w, 10)
-    print(sigmas)
 
-    sigmas2 = pdf.sample_permutations_slow(w, 10)
+    # Example vanilla pdf
+    # w = np.random.rand(n)
+    w = np.array([1, 110, 220, 455, 999])
+    pdf = VanillaPdf(n, np.log(w))
+    sigmas = pdf.sample_permutations(10)
+    sigmas2 = pdf.sample_permutations_slow(10)
+    print(sigmas)
     print(sigmas2)
+
+    # Example conditional pdf
+    pdf = ConditionalPdf(n)
+    sigmas = pdf.sample_permutations(10)
+    print(sigmas)
 
     # Example usage
     # n = 5
