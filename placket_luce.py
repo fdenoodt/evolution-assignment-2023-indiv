@@ -110,7 +110,7 @@ class ConditionalPdf(PdfRepresentation):
             assert w_log.shape == (n, n)
         super().__init__(n, w_log)
 
-    def sample_node_given(self, j, permutation_so_far, L):
+    def sample_node_given(self, j, permutation_so_far):
         """
         Samples a permutation given the previous node
         :param j: the previously sampled node
@@ -153,7 +153,7 @@ class ConditionalPdf(PdfRepresentation):
         permutation = np.zeros(self.n, dtype=int)
         permutation[0] = self.sample_permutation_marginal()
         for i in range(1, self.n):
-            permutation[i] = self.sample_node_given(permutation[i - 1], permutation[:i], i)
+            permutation[i] = self.sample_node_given(permutation[i - 1], permutation[:i])
         return permutation
 
         # TODO:
@@ -235,19 +235,20 @@ class PlackettLuce:
 if __name__ == "__main__":
     # test sample_permutations
     n = 5
+    nb_samples_lambda = 10
 
     # Example vanilla pdf
     # w = np.random.rand(n)
     w = np.array([1, 110, 220, 455, 999])
     pdf = VanillaPdf(n, np.log(w))
-    sigmas = pdf.sample_permutations(10)
-    sigmas2 = pdf.sample_permutations_slow(10)
+    sigmas = pdf.sample_permutations(nb_samples_lambda)
+    sigmas2 = pdf.sample_permutations_slow(nb_samples_lambda)
     print(sigmas)
     print(sigmas2)
 
     # Example conditional pdf
     pdf = ConditionalPdf(n)
-    sigmas = pdf.sample_permutations(10)
+    sigmas = pdf.sample_permutations(nb_samples_lambda)
     print(sigmas)
 
     # Example usage
