@@ -137,21 +137,13 @@ class ConditionalPdf(PdfRepresentation):
         node = np.random.choice(self.n, size=1, replace=False, p=probabilities)[0]
         return node
 
-    def sample_permutation_marginal(self):
-        # need to calc For all i: P(i) = sum_j P(i | j) // bayes factorization
-        p_is = np.zeros(self.n)
-        for i in range(self.n):
-            p_is[i] = np.sum(np.exp(self.w_log[i, :]))
-
-        probabilities = p_is / np.sum(p_is)
-
-        # sample one node from the marginal distribution
-        permutation = np.random.choice(self.n, size=1, replace=False, p=probabilities)[0]
-        return permutation
+    def sample_first_node(self):
+        # sample first node from uniform distribution
+        return np.random.choice(self.n, size=1, replace=False)[0]
 
     def sample_permutation(self):
         permutation = np.zeros(self.n, dtype=int)
-        permutation[0] = self.sample_permutation_marginal()
+        permutation[0] = self.sample_first_node()
         for i in range(1, self.n):
             permutation[i] = self.sample_node_given(permutation[i - 1], permutation[:i])
         return permutation
