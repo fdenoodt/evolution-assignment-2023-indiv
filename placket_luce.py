@@ -57,15 +57,27 @@ class VanillaPdf(PdfRepresentation):
 
     @staticmethod
     def calc_w_log_p_partial(w_log, sigma, i):
+        """
+        Calculates the partial derivative of the log probability of the Plackett-Luce model
+        :param sigma: shape: (n)
+        :return: shape (1)
+        """
         if i > 0:
             sums = [np.sum(np.exp(w_log[sigma[k:]])) for k in range(i)]
             intermediate_result = np.sum([1 / sum for sum in sums])
-            return 1 - np.exp(w_log[sigma[i]]) * intermediate_result
+            partial = 1 - np.exp(w_log[sigma[i]]) * intermediate_result
+            return partial  # single value
         else:
             return 1
 
     @staticmethod
     def inner_loop(i, sigmas, w_log, n):
+        """
+        Calculates the gradient for a single sample sigma[i]
+        :param i: index of the sample
+        :param sigmas: shape: (nb_samples_lambda, n)
+        :return: shape: (n)
+        """
         js = np.arange(n)
         gradient = np.zeros_like(w_log)
         gradient[sigmas[i][js]] = np.array(
@@ -79,8 +91,8 @@ class VanillaPdf(PdfRepresentation):
         nb_samples_lambda = len(sigmas)
 
         gradients = np.zeros((nb_samples_lambda, n))
-        iss = np.arange(nb_samples_lambda)
-        gradients[iss] = np.array(
+        sample_indices = np.arange(nb_samples_lambda)
+        gradients[sample_indices] = np.array(
             [VanillaPdf.inner_loop(i, sigmas, w_log, n) for i in range(nb_samples_lambda)])
 
         return gradients  # shape: (nb_samples_lambda, n)
@@ -139,7 +151,9 @@ class ConditionalPdf(PdfRepresentation):
 
     def sample_first_node(self):
         # sample first node from uniform distribution
-        return np.random.choice(self.n, size=1, replace=False)[0]
+        # return np.random.choice(self.n, size=1, replace=False)[0]
+        # TODO
+        return 5
 
     def sample_permutation(self):
         permutation = np.zeros(self.n, dtype=int)
@@ -155,17 +169,76 @@ class ConditionalPdf(PdfRepresentation):
         permutations = np.array([self.sample_permutation() for _ in range(nb_samples_lambda)])
         return permutations
 
-    def calc_gradients(self, sigmas):
+    @staticmethod
+    def calc_w_log_p_partial(w_log, sigma, i):
+        """
+        Calculates the partial derivative of the log probability of the Plackett-Luce model
+        :param sigma: shape: (n)
+        :param i: index of the sample
+        :return: shape (1)
+        """
+        w = np.exp(w_log)  # (n, n)
+        i_prev = sigma[i - 1]  # previously sampled node
+        if i > 0:
+            sums = [np.sum(w[sigma[k:], i_prev]) for k in range(i)]
+            intermediate_result = np.sum([1 / sum for sum in sums])
+            partial = 1 - w[sigma[i], i_prev] * intermediate_result
+            return partial  # single value
+        else:
+            return 1
+
+    @staticmethod
+    def inner_loop(i, sigmas, w_log, n):
+        """
+        Calculates the gradient for a single sample sigma[i]
+        :param i: index of the sample
+        :param sigmas: shape: (nb_samples_lambda, n)
+        :return: shape: (n)
+        """
+        # js = np.arange(n)
+        # gradient = np.zeros_like(w_log) # (n, n)
+        # gradient[sigmas[i][js]] = np.array(
+        #     [ConditionalPdf.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
+
+        # now for w_log (n, n)
+        gradient = np.zeros_like(w_log)  # (n, n)
+        for j in range(1, n):  # Skip first node, because it is fixed
+            # TODO: very whether starting at 1 is ok and so on. (maybe W mtx should be smaller)
+            permutation_i = sigmas[i]
+            node_t = permutation_i[j]
+            # node_t_minus_1 = sigmas[i][j - 1]
+            gradient[node_t, j] = ConditionalPdf.calc_w_log_p_partial(w_log, permutation_i, j)
+
+        return gradient
+
+    @staticmethod
+    def calc_w_log_ps(w_log, sigmas):
+        # Calculates all partial derivatives for a list of samples sigmas
+        # Partial derivates that are not relevant (eg delta_w(i | j != i-1) are set to zero
         n = len(sigmas[0])
         nb_samples_lambda = len(sigmas)
 
-        gradients = np.zeros((nb_samples_lambda, n))
-        return gradients  # shape (nb_samples_lambda, n)
+        # lambd * (n * n)
+        gradients = np.zeros((nb_samples_lambda, n, n))
+        sample_indices = np.arange(nb_samples_lambda)
+        gradients[sample_indices] = np.array(
+            # Calculate the (n*n) partial derivatives for each sample
+            [ConditionalPdf.inner_loop(i, sigmas, w_log, n) for i in range(nb_samples_lambda)])
+
+        return gradients  # shape: (nb_samples_lambda, n)
+
+    def calc_gradients(self, sigmas):
+        """
+        Calculates the gradient of the log probability of the Plackett-Luce model
+        :param w_log: log of the weights (length n)
+        :param sigmas: list of sampled permutations (length nb_samples_lambda)
+        :return: gradient of the log probability of the Plackett-Luce model. Shape: (nb_samples_lambda, n)
+        """
+        return ConditionalPdf.calc_w_log_ps(self.w_log, sigmas)
 
     def update_w_log(self, delta_w_log_F, lr):
-        # self.w_log = self.w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
-        # not implemented yet exception
-        raise NotImplementedError
+        assert delta_w_log_F.shape == self.w_log.shape
+        self.w_log = self.w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
 
 class PlackettLuce:
@@ -218,8 +291,20 @@ class PlackettLuce:
         assert len(f_vals) == nb_samples_lambda
         assert len(delta_w_log_ps) == nb_samples_lambda
 
-        gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
-        gradient /= nb_samples_lambda  # ??? maybe this is wrong? i think they dont do it in the code
+        # f_vals: shape (nb_samples_lambda)
+        # delta_w_log_ps: shape (nb_samples_lambda, (n, n))
+
+        # only for vanilla pdf (when delta_w_log_ps is a vector)
+        # gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
+        # gradient /= nb_samples_lambda  # TODO: I think authors dont do this it in their code
+
+        # for conditional pdf (when delta_w_log_ps is a matrix)
+        gradient = np.zeros_like(delta_w_log_ps[0])
+        for i in range(nb_samples_lambda):
+            f_val = f_vals[i] # scalar
+            delta_w_log_p = delta_w_log_ps[i] # (n, n)
+            gradient += f_val * delta_w_log_p
+        gradient /= nb_samples_lambda
 
         return gradient
 

@@ -17,7 +17,7 @@ import numpy as np
 
 from benchmark_lolib import Benchmark
 # from benchmark_tsp import Benchmark
-from placket_luce import PlackettLuce, VanillaPdf, PdfRepresentation
+from placket_luce import PlackettLuce, VanillaPdf, PdfRepresentation, ConditionalPdf
 
 
 def run_experiment():
@@ -32,7 +32,8 @@ def run_experiment():
 
     benchmark = Benchmark(filename, normalize=True, maximise=True)
     a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U, benchmark)
-    pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
+    # pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
+    pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
     best_fitness = a.optimize(pdf)
 
     return best_fitness
