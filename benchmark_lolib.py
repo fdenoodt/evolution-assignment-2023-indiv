@@ -23,6 +23,11 @@ class Benchmark(AbstractBenchmark):
         assert rows * cols == dim * dim
 
         matrix = data.reshape((dim, dim))
+
+        # temporarily set dim to 10 to test
+        matrix = matrix[:10, :10]
+
+
         return matrix
 
     def compute_fitness(self, population):

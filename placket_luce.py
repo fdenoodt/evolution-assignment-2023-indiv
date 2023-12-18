@@ -153,7 +153,7 @@ class ConditionalPdf(PdfRepresentation):
         # sample first node from uniform distribution
         # return np.random.choice(self.n, size=1, replace=False)[0]
         # TODO
-        return 5
+        return 3
 
     def sample_permutation(self):
         permutation = np.zeros(self.n, dtype=int)
@@ -301,8 +301,8 @@ class PlackettLuce:
         # for conditional pdf (when delta_w_log_ps is a matrix)
         gradient = np.zeros_like(delta_w_log_ps[0])
         for i in range(nb_samples_lambda):
-            f_val = f_vals[i] # scalar
-            delta_w_log_p = delta_w_log_ps[i] # (n, n)
+            f_val = f_vals[i]  # scalar
+            delta_w_log_p = delta_w_log_ps[i]  # (n, n)
             gradient += f_val * delta_w_log_p
         gradient /= nb_samples_lambda
 
@@ -323,9 +323,23 @@ if __name__ == "__main__":
     print(sigmas)
     print(sigmas2)
 
+    print("*" * 80)
     # Example conditional pdf
     pdf = ConditionalPdf(n)
     sigmas = pdf.sample_permutations(nb_samples_lambda)
+    print(sigmas)
+
+    print("*" * 80)
+    print("Test conditional pdf with fixed w")
+    W = np.array([[1, 1, 1, 1],
+                  [1, 1, 1, 1000],
+                  [1, 100, 100, 100],
+                  [1, 1, 1, 1]])
+    n = W.shape[0]
+
+    w_log = np.log(W)
+    pdf = ConditionalPdf(n, w_log)
+    sigmas = pdf.sample_permutations(1)
     print(sigmas)
 
     # Example usage

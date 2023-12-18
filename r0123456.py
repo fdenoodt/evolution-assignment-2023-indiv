@@ -30,7 +30,6 @@ class r0123456:
 
         ctr = 0
         while True:
-
             # Sample sigma_i from Plackett luce
             sigmas = pdf.sample_permutations(nb_samples_lambda)
             fitnesses = fitness_func(sigmas)
@@ -50,8 +49,9 @@ class r0123456:
             avg_fitness = np.mean(fitnesses)
 
             self.utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)
-            # self.utility.print_array((w_log), ctr, frequency=10)
-            # self.utility.print_array(np.exp(w_log), ctr, frequency=10)
+            self.utility.print_mtx(np.exp(pdf.w_log), ctr, frequency=10)
+
+            # self.utility.print_array(np.exp(pdf.w_log), ctr, frequency=10)
             # self.utility.print_array(delta_w_log_F, ctr, frequency=10)
             # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
 
