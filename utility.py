@@ -23,7 +23,7 @@ class Utility:
 
     def print_array(self, arr, ctr, frequency=10):
         if ctr % frequency == 0:
-            w_exp = np.array([f'{a:.2f}' for a in arr])
+            w_exp = np.array([f'{a:.4f}' for a in arr])
             print(w_exp)
 
     def print_array_2d(self, arr, ctr, frequency=10):

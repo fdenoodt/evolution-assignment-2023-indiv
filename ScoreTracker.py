@@ -11,7 +11,7 @@ class ScoreTracker:
         reporter = Reporter.Reporter(reporter_name)
         self.utility = Utility(reporter, keep_running_until_timeup, numIters)
 
-    def update_scores(self, fitnesses, sigmas, ctr, nb_samples_lambda, pdf):
+    def update_scores(self, fitnesses, sigmas, ctr, pdf, print_mtx=False):
         # code is clearer
         if self.maximize:
             best_idx = np.argmax(fitnesses)
@@ -28,13 +28,14 @@ class ScoreTracker:
 
         self.utility.print_score(ctr, self.best_fitness, avg_fitness, 10)
 
-        w = np.exp(pdf.w_log)
-        frequency = 100
-        if len(w.shape) == 2:  # if w_log is square matrix:
-            self.utility.print_mtx(w, ctr, frequency)
-        elif len(w.shape) == 1:  # if w_log is 1d array:
-            self.utility.print_array(np.exp(pdf.w_log), ctr, frequency)
-        else:
-            raise Exception("w_log has unsupported shape")
+        if print_mtx:
+            w = np.exp(pdf.w_log)
+            frequency = 100
+            if len(w.shape) == 2:  # if w_log is square matrix:
+                self.utility.print_mtx(w, ctr, frequency)
+            elif len(w.shape) == 1:  # if w_log is 1d array:
+                self.utility.print_array(w, ctr, frequency)
+            else:
+                raise Exception("w_log has unsupported shape")
 
         return self.best_fitness, self.sigma_best

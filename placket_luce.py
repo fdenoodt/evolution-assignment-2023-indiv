@@ -122,6 +122,12 @@ class ConditionalPdf(PdfRepresentation):
             assert w_log.shape == (n, n)
         super().__init__(n, w_log)
 
+    def sample_first_node(self):
+        # sample first node from uniform distribution
+        # return np.random.choice(self.n, size=1, replace=False)[0]
+        # TODO
+        return 3
+
     def sample_node_given(self, j, permutation_so_far):
         """
         Samples a permutation given the previous node
@@ -129,14 +135,6 @@ class ConditionalPdf(PdfRepresentation):
         :param permutation_so_far: the permutation so far, i.e. the first L-1 nodes.
         Those nodes are fixed and will not be sampled again.
         """
-
-        # w_log_giv_j = self.w_log[:, j]
-        # w_giv_j = np.exp(w_log_giv_j)
-        # n = len(w_giv_j)
-        # probabilities = w_giv_j / np.sum(w_giv_j)
-        # permutation = np.random.choice(n, size=n, replace=False, p=probabilities)
-        # return permutation
-
         # return only single node
         w_log_giv_j = self.w_log[:, j]
         w_giv_j = np.exp(w_log_giv_j)
@@ -149,21 +147,19 @@ class ConditionalPdf(PdfRepresentation):
         node = np.random.choice(self.n, size=1, replace=False, p=probabilities)[0]
         return node
 
-    def sample_first_node(self):
-        # sample first node from uniform distribution
-        # return np.random.choice(self.n, size=1, replace=False)[0]
-        # TODO
-        return 3
-
     def sample_permutation(self):
         permutation = np.zeros(self.n, dtype=int)
         permutation[0] = self.sample_first_node()
-        for i in range(1, self.n):
-            permutation[i] = self.sample_node_given(permutation[i - 1], permutation[:i])
+
+        permutation[1:] = np.array(
+            [self.sample_node_given(permutation[i - 1], permutation[:i]) for i in range(1, self.n)])
+
         return permutation
 
         # TODO:
-        # permutation[1:] = self.sample_permutation_given(permutation[:-1])
+
+    # eg xs = arange()
+    # sin(xs) -> returns [....]
 
     def sample_permutations(self, nb_samples_lambda):
         permutations = np.array([self.sample_permutation() for _ in range(nb_samples_lambda)])
