@@ -16,9 +16,12 @@ class PdfRepresentation(ABC):
     def calc_gradients(self, sigmas):
         pass
 
-    @abstractmethod
-    def update_w_log(self, delta_w_log_F, lr):
-        pass
+    def update_w_log(self, delta_w_log_F, lr, maximize):
+        assert delta_w_log_F.shape == self.w_log.shape
+        if maximize:
+            self.w_log = self.w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
+        else:
+            self.w_log = self.w_log - (lr * delta_w_log_F)
 
 
 class VanillaPdf(PdfRepresentation):
@@ -105,9 +108,6 @@ class VanillaPdf(PdfRepresentation):
         :return: gradient of the log probability of the Plackett-Luce model. Shape: (nb_samples_lambda, n)
         """
         return VanillaPdf.calc_w_log_ps(self.w_log, sigmas)
-
-    def update_w_log(self, delta_w_log_F, lr):
-        self.w_log = self.w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
 
 
 class ConditionalPdf(PdfRepresentation):
@@ -232,14 +232,9 @@ class ConditionalPdf(PdfRepresentation):
         """
         return ConditionalPdf.calc_w_log_ps(self.w_log, sigmas)
 
-    def update_w_log(self, delta_w_log_F, lr):
-        assert delta_w_log_F.shape == self.w_log.shape
-        self.w_log = self.w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
-
 
 class PlackettLuce:
     def __init__(self, U, benchmark):
-        assert benchmark.maximise is True  # false not implemented yet
         assert callable(U)
 
         self.U = U
@@ -278,6 +273,9 @@ class PlackettLuce:
         adjusted_xs[sorted_indices[:int(mu)]] = np.exp(xs[sorted_indices[:int(mu)]])
         adjusted_xs[sorted_indices[int(mu):]] = 0  # now final ones are the worst
         adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
+
+        # not implemented error
+        raise NotImplementedError("Not implemented yet")
 
         return adjusted_xs
 

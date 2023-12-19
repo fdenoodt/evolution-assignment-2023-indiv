@@ -8,8 +8,9 @@ class Utility:
         self.keep_running_until_timeup = keep_running_until_timeup
         self.numIters = numIters
 
-    def print_score(self, ctr, best_fitness, avg_fitness, nb_samples_lambda):
-        print(f"{ctr} \t best fitness: {best_fitness:_.2f}, avg fitness: {avg_fitness / nb_samples_lambda:_.4f}")
+    def print_score(self, ctr, best_fitness, avg_fitness, frequency=10):
+        if ctr % frequency == 0:
+            print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
 
     def print_mtx(self, mtx, ctr, frequency=10):
         if ctr % frequency == 0:

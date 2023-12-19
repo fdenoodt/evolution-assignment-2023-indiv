@@ -30,7 +30,7 @@ def run_experiment():
     numIters = 1000
     U = PlackettLuce.U_identity
 
-    benchmark = Benchmark(filename, normalize=True, maximise=True)
+    benchmark = Benchmark(filename, normalize=True, maximise=False)
     a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U, benchmark)
     # pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
     pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())

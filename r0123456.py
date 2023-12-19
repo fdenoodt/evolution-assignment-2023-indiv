@@ -1,5 +1,6 @@
 import reporter as Reporter
-from placket_luce import PlackettLuce, PdfRepresentation
+from ScoreTracker import ScoreTracker
+from placket_luce import PlackettLuce
 from utility import Utility
 
 import numpy as np
@@ -7,27 +8,29 @@ import numpy as np
 
 class r0123456:
     def __init__(self, lr, nb_samples_lambda, numIters, U, benchmark):
-        self.reporter = Reporter.Reporter(self.__class__.__name__)
+        self.reporter_name = self.__class__.__name__
+
         self.keep_running_until_timeup = True
         self.numIters = numIters
 
         self.lr = lr
         self.nb_samples_lambda = nb_samples_lambda
 
-        self.utility = Utility(self.reporter, self.keep_running_until_timeup, self.numIters)
         self.pl = PlackettLuce(U, benchmark)
 
     def optimize(self, pdf):
         n = self.pl.benchmark.permutation_size()
         f = self.pl.benchmark.compute_fitness
-        self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n, pdf)
+        maximize = self.pl.benchmark.maximise
+        reporter_name = self.reporter_name
+        keep_running_until_timeup = self.keep_running_until_timeup
+        numIters = self.numIters
 
-    def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n, pdf):
+        # stores best score + best sigma
+        score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name)
+        self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n, pdf, maximize, score_tracker)
 
-        # specify data types for numba
-        sigma_best = np.zeros(n, dtype=np.int64)
-        best_fitness = 0
-
+    def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n, pdf, maximize, score_tracker):
         ctr = 0
         while True:
             # Sample sigma_i from Plackett luce
@@ -36,31 +39,18 @@ class r0123456:
 
             delta_w_log_ps = pdf.calc_gradients(sigmas)
 
-            best_idx = np.argmax(fitnesses)
-            if fitnesses[best_idx] > best_fitness:
-                best_fitness = fitnesses[best_idx]
-                sigma_best = sigmas[best_idx]
+            best_fitness, sigma_best = score_tracker.update_scores(fitnesses, sigmas, ctr, nb_samples_lambda, pdf)
 
-            delta_w_log_F = PlackettLuce.calc_w_log_F(
-                self.pl.U, fitnesses, delta_w_log_ps, nb_samples_lambda)
+            delta_w_log_F = PlackettLuce.calc_w_log_F(self.pl.U, fitnesses, delta_w_log_ps, nb_samples_lambda)
 
-            pdf.update_w_log(delta_w_log_F, lr)
+            pdf.update_w_log(delta_w_log_F, lr, maximize)
 
-            avg_fitness = np.mean(fitnesses)
-
-            self.utility.print_score(ctr, best_fitness, avg_fitness, nb_samples_lambda)
-            self.utility.print_mtx(np.exp(pdf.w_log), ctr, frequency=10)
-
-            # self.utility.print_array(np.exp(pdf.w_log), ctr, frequency=10)
-            # self.utility.print_array(delta_w_log_F, ctr, frequency=10)
-            # self.print_array_2d(delta_w_log_ps, ctr, frequency=10)
-
-            ctr += 1
             # TODO
             # if numerical problems occurred:
             #   w = almost degenerate distr with mode at sigma_best
 
-            if self.utility.is_done(ctr):
+            ctr += 1
+            if score_tracker.utility.is_done(ctr):
                 break
 
         return best_fitness, sigma_best
