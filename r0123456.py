@@ -39,7 +39,7 @@ class r0123456:
 
             delta_w_log_ps = pdf.calc_gradients(sigmas)
 
-            best_fitness, sigma_best = score_tracker.update_scores(fitnesses, sigmas, ctr, pdf)
+            best_fitness, sigma_best = score_tracker.update_scores(fitnesses, sigmas, ctr, pdf, print_mtx=True)
 
             delta_w_log_F = PlackettLuce.calc_w_log_F(self.pl.U, fitnesses, delta_w_log_ps, nb_samples_lambda)
 

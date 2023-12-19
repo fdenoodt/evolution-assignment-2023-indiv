@@ -23,6 +23,11 @@ class PdfRepresentation(ABC):
         else:
             self.w_log = self.w_log - (lr * delta_w_log_F)
 
+        # normalize (not in paper, but i hope it helps against numerical problems)
+        w = np.exp(self.w_log)
+        w /= np.sum(w)
+        self.w_log = np.log(w)
+
 
 class VanillaPdf(PdfRepresentation):
     def __init__(self, n, w_log=None):
@@ -155,11 +160,6 @@ class ConditionalPdf(PdfRepresentation):
             [self.sample_node_given(permutation[i - 1], permutation[:i]) for i in range(1, self.n)])
 
         return permutation
-
-        # TODO:
-
-    # eg xs = arange()
-    # sin(xs) -> returns [....]
 
     def sample_permutations(self, nb_samples_lambda):
         permutations = np.array([self.sample_permutation() for _ in range(nb_samples_lambda)])
