@@ -30,7 +30,7 @@ class ScoreTracker:
 
         if print_mtx:
             w = np.exp(pdf.w_log)
-            frequency = 10
+            frequency = 100
             if len(w.shape) == 2:  # if w_log is square matrix:
                 Utility.print_mtx(w, ctr, frequency, sub_mtx=10)
             elif len(w.shape) == 1:  # if w_log is 1d array:

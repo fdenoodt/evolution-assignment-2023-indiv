@@ -26,8 +26,8 @@ def run_experiment():
 
     # lr, nb_samples_lambda, numIters, U
     lr = 0.1
-    nb_samples_lambda = 100
-    numIters = 1000
+    nb_samples_lambda = 500
+    numIters = 1_000_000
     U = PlackettLuce.U_identity
 
     benchmark = Benchmark(filename, normalize=True, maximise=False)
