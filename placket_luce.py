@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
+from utility import Utility
+
 
 class PdfRepresentation(ABC):
     def __init__(self, n, w_log):
@@ -16,6 +18,10 @@ class PdfRepresentation(ABC):
     def calc_gradients(self, sigmas):
         pass
 
+    @abstractmethod
+    def normalize_w_log(self):
+        pass
+
     def update_w_log(self, delta_w_log_F, lr, maximize):
         assert delta_w_log_F.shape == self.w_log.shape
         if maximize:
@@ -23,10 +29,7 @@ class PdfRepresentation(ABC):
         else:
             self.w_log = self.w_log - (lr * delta_w_log_F)
 
-        # normalize (not in paper, but i hope it helps against numerical problems)
-        w = np.exp(self.w_log)
-        w /= np.sum(w)
-        self.w_log = np.log(w)
+        self.normalize_w_log()
 
 
 class VanillaPdf(PdfRepresentation):
@@ -50,6 +53,9 @@ class VanillaPdf(PdfRepresentation):
         g = logits - np.log(-np.log(u))  # shape: (nb_samples_lambda, n)
 
         res = np.argsort(-g, axis=1)  # shape: (nb_samples_lambda, n)
+
+        # asset permutation consists of distinct elements
+        assert np.all([len(np.unique(permutation)) == len(permutation) for permutation in res])
         return res
 
     def sample_permutation(self):
@@ -114,6 +120,12 @@ class VanillaPdf(PdfRepresentation):
         """
         return VanillaPdf.calc_w_log_ps(self.w_log, sigmas)
 
+    def normalize_w_log(self):
+        # normalize (not in paper, but i hope it helps against numerical problems)
+        w = np.exp(self.w_log)
+        w /= np.sum(w)
+        self.w_log = np.log(w)
+
 
 class ConditionalPdf(PdfRepresentation):
     def __init__(self, n, w_log=None):
@@ -131,7 +143,7 @@ class ConditionalPdf(PdfRepresentation):
         # sample first node from uniform distribution
         # return np.random.choice(self.n, size=1, replace=False)[0]
         # TODO
-        return 3
+        return 0
 
     def sample_node_given(self, j, permutation_so_far):
         """
@@ -156,8 +168,11 @@ class ConditionalPdf(PdfRepresentation):
         permutation = np.zeros(self.n, dtype=int)
         permutation[0] = self.sample_first_node()
 
-        permutation[1:] = np.array(
-            [self.sample_node_given(permutation[i - 1], permutation[:i]) for i in range(1, self.n)])
+        # permutation[1:] = np.array(
+        #     [self.sample_node_given(permutation[i - 1], permutation[:i]) for i in range(1, self.n)])
+
+        for i in range(1, self.n):
+            permutation[i] = self.sample_node_given(permutation[i - 1], permutation[:i])
 
         return permutation
 
@@ -197,9 +212,22 @@ class ConditionalPdf(PdfRepresentation):
         for t in range(1, n):  # Skip first node, because it is fixed
             # TODO: very whether starting at 1 is ok and so on. (maybe W mtx should be smaller)
             permutation = sigmas[i]
+            # assert that permutation consists of unique elements
+            # assert len(permutation) == len(np.unique(permutation)) # TODO
             node_t = permutation[t]
             node_t_prev = permutation[t - 1]
+
+            # if node_t == node_t_prev:
+            #     print("WARNING: node_t == node_t_prev")
+            # assert node_t != node_t_prev
+            # todo
             gradient[node_t, node_t_prev] = ConditionalPdf.calc_w_log_p_partial(w_log, permutation, t)
+
+        # if not np.allclose(np.diag(gradient), np.zeros_like(np.diag(gradient))):
+        #     print("WARNING: diagonal elements are not zero!")
+        #     print(np.diag(gradient))
+        # assert np.allclose(np.diag(gradient), np.zeros_like(np.diag(gradient)))
+        # TODO
 
         return gradient
 
@@ -217,7 +245,7 @@ class ConditionalPdf(PdfRepresentation):
             # Calculate the (n*n) partial derivatives for each sample
             [ConditionalPdf.inner_loop(i, sigmas, w_log, n) for i in range(nb_samples_lambda)])
 
-        return gradients  # shape: (nb_samples_lambda, n)
+        return gradients  # shape: (nb_samples_lambda, (n, n))
 
     def calc_gradients(self, sigmas):
         """
@@ -227,6 +255,39 @@ class ConditionalPdf(PdfRepresentation):
         :return: gradient of the log probability of the Plackett-Luce model. Shape: (nb_samples_lambda, n)
         """
         return ConditionalPdf.calc_w_log_ps(self.w_log, sigmas)
+
+    def normalize_w_log(self):
+        # normalize (not in paper, but i hope it helps against numerical problems)
+        w = np.exp(self.w_log)
+        # except for diagonal elements
+        w[np.diag_indices_from(w)] = 0
+
+        # except row 0 TODO: this assumes that the first node is fixed
+        w[0] = 0
+
+        # check if colums are non-zero
+        # if not np.allclose(np.sum(w, axis=0), np.ones_like(np.sum(w, axis=0))):
+        #     print("WARNING: columns do not sum to one!")
+        #     print(np.sum(w, axis=0))
+        #
+        #     idx = np.where(np.isclose(np.sum(w, axis=0), 0))
+        #     print("WARNING: columns with zero sum:")
+        #     print(idx)
+
+        sums = np.sum(w, axis=0)
+        idx = np.where(np.isclose(sums, 0))
+        if len(idx[0]) > 0:
+            print("WARNING: columns do not sum to one!")
+            print(sums)
+            print("WARNING: columns with zero sum:")
+            print(idx)
+        # normalize each column
+        w /= (np.sum(w, axis=0) + 1e-10)
+
+        # avoids log(0) warning
+        w[np.diag_indices_from(w)] = 1
+        w[0] = 1
+        self.w_log = np.log(w)
 
 
 class PlackettLuce:
@@ -293,7 +354,15 @@ class PlackettLuce:
         for i in range(nb_samples_lambda):
             f_val = f_vals[i]  # scalar
             delta_w_log_p = delta_w_log_ps[i]  # (n, n)
+
+            # assert diagonal elements are zero
+            if not np.allclose(np.diag(delta_w_log_p), np.zeros_like(np.diag(delta_w_log_p))):
+                print("WARNING: diagonal elements are not zero!")
+                print(np.diag(delta_w_log_p))
+            assert np.allclose(np.diag(delta_w_log_p), np.zeros_like(np.diag(delta_w_log_p)))
+
             gradient += f_val * delta_w_log_p
+
         gradient /= nb_samples_lambda
 
         return gradient
@@ -339,6 +408,23 @@ if __name__ == "__main__":
     print("Test conditional pdf gradients")
     gradient = pdf.calc_gradients(sigmas)
     print(gradient)
+
+    print("*" * 80)
+    print("Test conditional pdf distinct permutations nodes")
+    n = 10
+    pdf = ConditionalPdf(n)
+    sigma = pdf.sample_permutation()
+    print(np.exp(pdf.w_log))
+    print(sigma)
+    assert len(np.unique(sigma)) == n
+
+    print("*" * 80)
+    print("Test np.sum")
+    w = np.array([[1, 2, 3],
+                  [1, 2, 3],
+                  [1, 2, 3]], dtype=float)
+    w /= np.sum(w, axis=0)  # normalize each column
+    print(w)
 
     # Example usage
     # n = 5

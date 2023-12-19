@@ -30,11 +30,11 @@ class ScoreTracker:
 
         if print_mtx:
             w = np.exp(pdf.w_log)
-            frequency = 100
+            frequency = 10
             if len(w.shape) == 2:  # if w_log is square matrix:
-                self.utility.print_mtx(w, ctr, frequency)
+                Utility.print_mtx(w, ctr, frequency, sub_mtx=10)
             elif len(w.shape) == 1:  # if w_log is 1d array:
-                self.utility.print_array(w, ctr, frequency)
+                Utility.print_array(w, ctr, frequency)
             else:
                 raise Exception("w_log has unsupported shape")
 

@@ -12,21 +12,27 @@ class Utility:
         if ctr % frequency == 0:
             print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
 
-    def print_mtx(self, mtx, ctr, frequency=10):
+    @staticmethod
+    def print_mtx(mtx, ctr, frequency=10, sub_mtx=None):
+        if sub_mtx is not None:
+            mtx = mtx[:, :sub_mtx]
+
         if ctr % frequency == 0:
             for i in range(len(mtx)):
-                temp = np.array([f'{a:.2f}' for a in mtx[i]])
+                temp = np.array([f'{a:.4f}' for a in mtx[i]])
                 print(" ".join(temp))
             print()
             print()
             print()
 
-    def print_array(self, arr, ctr, frequency=10):
+    @staticmethod
+    def print_array(arr, ctr, frequency=10):
         if ctr % frequency == 0:
             w_exp = np.array([f'{a:.4f}' for a in arr])
             print(w_exp)
 
-    def print_array_2d(self, arr, ctr, frequency=10):
+    @staticmethod
+    def print_array_2d(arr, ctr, frequency=10):
         if ctr % frequency == 0:
             for i in range(len(arr)):
                 temp = np.array([f'{a:.2f}' for a in arr[i]])

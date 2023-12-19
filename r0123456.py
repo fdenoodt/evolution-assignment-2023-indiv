@@ -10,7 +10,7 @@ class r0123456:
     def __init__(self, lr, nb_samples_lambda, numIters, U, benchmark):
         self.reporter_name = self.__class__.__name__
 
-        self.keep_running_until_timeup = True
+        self.keep_running_until_timeup = False
         self.numIters = numIters
 
         self.lr = lr
