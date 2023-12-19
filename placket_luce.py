@@ -170,7 +170,7 @@ class ConditionalPdf(PdfRepresentation):
         return permutations
 
     @staticmethod
-    def calc_w_log_p_partial(w_log, sigma, i):
+    def calc_w_log_p_partial(w_log, sigma, t):
         """
         Calculates the partial derivative of the log probability of the Plackett-Luce model
         :param sigma: shape: (n)
@@ -178,11 +178,11 @@ class ConditionalPdf(PdfRepresentation):
         :return: shape (1)
         """
         w = np.exp(w_log)  # (n, n)
-        i_prev = sigma[i - 1]  # previously sampled node
-        if i > 0:
-            sums = [np.sum(w[sigma[k:], i_prev]) for k in range(i)]
+        t_prev = sigma[t - 1]  # previously sampled node
+        if t > 0:
+            sums = [np.sum(w[sigma[k:], t_prev]) for k in range(t)]
             intermediate_result = np.sum([1 / sum for sum in sums])
-            partial = 1 - w[sigma[i], i_prev] * intermediate_result
+            partial = 1 - w[sigma[t], t_prev] * intermediate_result
             return partial  # single value
         else:
             return 1
@@ -195,19 +195,15 @@ class ConditionalPdf(PdfRepresentation):
         :param sigmas: shape: (nb_samples_lambda, n)
         :return: shape: (n)
         """
-        # js = np.arange(n)
-        # gradient = np.zeros_like(w_log) # (n, n)
-        # gradient[sigmas[i][js]] = np.array(
-        #     [ConditionalPdf.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
 
         # now for w_log (n, n)
         gradient = np.zeros_like(w_log)  # (n, n)
-        for j in range(1, n):  # Skip first node, because it is fixed
+        for t in range(1, n):  # Skip first node, because it is fixed
             # TODO: very whether starting at 1 is ok and so on. (maybe W mtx should be smaller)
-            permutation_i = sigmas[i]
-            node_t = permutation_i[j]
-            # node_t_minus_1 = sigmas[i][j - 1]
-            gradient[node_t, j] = ConditionalPdf.calc_w_log_p_partial(w_log, permutation_i, j)
+            permutation = sigmas[i]
+            node_t = permutation[t]
+            node_t_prev = permutation[t - 1]
+            gradient[node_t, node_t_prev] = ConditionalPdf.calc_w_log_p_partial(w_log, permutation, t)
 
         return gradient
 
@@ -310,6 +306,9 @@ class PlackettLuce:
 
 
 if __name__ == "__main__":
+    # set seed
+    np.random.seed(123456)
+
     # test sample_permutations
     n = 5
     nb_samples_lambda = 10
@@ -341,6 +340,11 @@ if __name__ == "__main__":
     pdf = ConditionalPdf(n, w_log)
     sigmas = pdf.sample_permutations(1)
     print(sigmas)
+
+    print("*" * 80)
+    print("Test conditional pdf gradients")
+    gradient = pdf.calc_gradients(sigmas)
+    print(gradient)
 
     # Example usage
     # n = 5
