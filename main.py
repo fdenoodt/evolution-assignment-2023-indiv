@@ -15,8 +15,8 @@
 import r0123456
 import numpy as np
 
-from benchmark_lolib import Benchmark
-# from benchmark_tsp import Benchmark
+# from benchmark_lolib import Benchmark
+from benchmark_tsp import Benchmark
 from placket_luce import PlackettLuce, VanillaPdf, PdfRepresentation, ConditionalPdf
 
 
@@ -42,8 +42,8 @@ def run_experiment():
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    # filename = "./tour50.csv"
-    filename = "./benchmarks/be75eec.mat"
+    filename = "./tour50.csv"
+    # filename = "./benchmarks/be75eec.mat"
 
     # Set parameters
     run_experiment()

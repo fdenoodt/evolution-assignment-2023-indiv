@@ -13,6 +13,9 @@ class Benchmark(AbstractBenchmark):
         if replace_inf_with_large_val:
             _matrix = Benchmark.replace_inf_with_large_val(_matrix)
 
+        # TODO: remove
+        _matrix = _matrix[:10, :10]
+
         super().__init__(_matrix, normalize, maximise)
 
     @staticmethod
@@ -27,7 +30,7 @@ class Benchmark(AbstractBenchmark):
         print("largest non inf val: ", largest_value)
         return distanceMatrix
 
-    def compute_fitness(self, population):  # slow, but easy to understand
+    def compute_fitness_slow(self, population):  # slow, but easy to understand
         # shape: (populationSize, numCities)
         # eg population: [[1,2,3,4,5],[1,2,3,4,5], ... ]
 
@@ -43,7 +46,8 @@ class Benchmark(AbstractBenchmark):
             fitnesses.append(fitness)
         return np.array(fitnesses)
 
-    def compute_fitness_good(self, population, distanceMatrix):  # faster, generated with copilot but we understand it!
+    def compute_fitness(self, population):  # faster, generated with copilot but we understand it!
+        distanceMatrix = self.matrix
 
         # assert population doesn't contain cities that are floats (sanity check, can be removed later)
         assert np.all(np.equal(np.mod(population, 1), 0))
@@ -57,3 +61,17 @@ class Benchmark(AbstractBenchmark):
         # returns: (populationSize, 1)
         # eg: [100,200, ... ]
         return fitnesses
+
+
+if __name__ == "__main__":
+    # test whether compute_fitness and compute_fitness_good give the same results
+    filename = "./tour50.csv"
+    benchmark = Benchmark(filename, normalize=True, maximise=False)
+
+    population = np.random.rand(1000, 50) * 50
+    population = population.astype(int)
+
+    fitnesses = benchmark.compute_fitness(population)
+    fitnesses_slow = benchmark.compute_fitness_slow(population)
+
+    assert np.all(np.equal(fitnesses, fitnesses_slow))
