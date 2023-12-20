@@ -25,15 +25,15 @@ def run_experiment():
     print("Running experiment with parameters:")
 
     # lr, nb_samples_lambda, numIters, U
-    lr = 0.1
-    nb_samples_lambda = 500
+    lr = 0.9
+    nb_samples_lambda = 100
     numIters = 1_000_000
     U = PlackettLuce.U_identity
 
     benchmark = Benchmark(filename, normalize=True, maximise=False)
     a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U, benchmark)
-    # pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
-    pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
+    pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
+    # pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
     best_fitness = a.optimize(pdf)
 
     return best_fitness

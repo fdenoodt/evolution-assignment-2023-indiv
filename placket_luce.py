@@ -355,11 +355,12 @@ class PlackettLuce:
             f_val = f_vals[i]  # scalar
             delta_w_log_p = delta_w_log_ps[i]  # (n, n)
 
+            # only applicable for conditional pdf
             # assert diagonal elements are zero
-            if not np.allclose(np.diag(delta_w_log_p), np.zeros_like(np.diag(delta_w_log_p))):
-                print("WARNING: diagonal elements are not zero!")
-                print(np.diag(delta_w_log_p))
-            assert np.allclose(np.diag(delta_w_log_p), np.zeros_like(np.diag(delta_w_log_p)))
+            # if not np.allclose(np.diag(delta_w_log_p), np.zeros_like(np.diag(delta_w_log_p))):
+            #     print("WARNING: diagonal elements are not zero!")
+            #     print(np.diag(delta_w_log_p))
+            # assert np.allclose(np.diag(delta_w_log_p), np.zeros_like(np.diag(delta_w_log_p)))
 
             gradient += f_val * delta_w_log_p
 

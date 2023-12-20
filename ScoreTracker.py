@@ -11,7 +11,7 @@ class ScoreTracker:
         reporter = Reporter.Reporter(reporter_name)
         self.utility = Utility(reporter, keep_running_until_timeup, numIters)
 
-    def update_scores(self, fitnesses, sigmas, ctr, pdf, print_mtx=False):
+    def update_scores(self, fitnesses, sigmas, ctr, pdf, print_w=False):
         # code is clearer
         if self.maximize:
             best_idx = np.argmax(fitnesses)
@@ -28,7 +28,7 @@ class ScoreTracker:
 
         self.utility.print_score(ctr, self.best_fitness, avg_fitness, 10)
 
-        if print_mtx:
+        if print_w:
             w = np.exp(pdf.w_log)
             frequency = 100
             if len(w.shape) == 2:  # if w_log is square matrix:
