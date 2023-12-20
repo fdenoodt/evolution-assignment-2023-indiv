@@ -27,7 +27,7 @@ class Benchmark(AbstractBenchmark):
                                   largest_value, distanceMatrix)
         # faster for the start, finds existing solutions quicker but in long run not that much impact
 
-        print("largest non inf val: ", largest_value)
+        print(f"largest non inf val: {largest_value:_.4f}")
         return distanceMatrix
 
     def compute_fitness_slow(self, population):  # slow, but easy to understand

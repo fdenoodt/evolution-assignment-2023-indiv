@@ -27,7 +27,7 @@ class r0123456:
         numIters = self.numIters
 
         # stores best score + best sigma
-        score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name)
+        score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.pl.benchmark)
         self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n, pdf, maximize, score_tracker)
 
     def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n, pdf, maximize, score_tracker):
@@ -38,19 +38,12 @@ class r0123456:
             fitnesses = fitness_func(sigmas)
 
             delta_w_log_ps = pdf.calc_gradients(sigmas)
-
-            best_fitness, sigma_best = score_tracker.update_scores(fitnesses, sigmas, ctr, pdf, print_w=True)
-
+            best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(fitnesses, sigmas, ctr, pdf, print_w=True)
             delta_w_log_F = PlackettLuce.calc_w_log_F(self.pl.U, fitnesses, delta_w_log_ps, nb_samples_lambda)
-
             pdf.update_w_log(delta_w_log_F, lr, maximize)
 
-            # TODO
-            # if numerical problems occurred:
-            #   w = almost degenerate distr with mode at sigma_best
-
             ctr += 1
-            if score_tracker.utility.is_done(ctr):
+            if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):
                 break
 
         return best_fitness, sigma_best

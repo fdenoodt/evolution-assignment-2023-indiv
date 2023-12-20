@@ -4,29 +4,35 @@ from utility import Utility
 
 
 class ScoreTracker:
-    def __init__(self, n, maximize, keep_running_until_timeup, numIters, reporter_name):
+    def __init__(self, n, maximize, keep_running_until_timeup, numIters, reporter_name, benchmark):
         self.maximize = maximize
-        self.best_fitness = -np.inf if maximize else np.inf
-        self.sigma_best = np.zeros(n, dtype=np.int64)
+        self.all_time_best_fitness = -np.inf if maximize else np.inf
+        self.all_time_sigma_best = np.zeros(n, dtype=np.int64)
         reporter = Reporter.Reporter(reporter_name)
         self.utility = Utility(reporter, keep_running_until_timeup, numIters)
+        self.benchmark = benchmark
 
     def update_scores(self, fitnesses, sigmas, ctr, pdf, print_w=False):
+
+        fitnesses = self.benchmark.unnormalize_fitnesses(fitnesses)
+
         # code is clearer
         if self.maximize:
             best_idx = np.argmax(fitnesses)
-            if fitnesses[best_idx] > self.best_fitness:
-                self.best_fitness = fitnesses[best_idx]
-                self.sigma_best = sigmas[best_idx]
+            best_fitness = fitnesses[best_idx]
+            sigma_best = sigmas[best_idx]
+            if best_fitness > self.all_time_best_fitness:
+                self.all_time_best_fitness = best_fitness
+                self.all_time_sigma_best = sigma_best
         else:
             best_idx = np.argmin(fitnesses)
-            if fitnesses[best_idx] < self.best_fitness:
-                self.best_fitness = fitnesses[best_idx]
-                self.sigma_best = sigmas[best_idx]
+            best_fitness = fitnesses[best_idx]
+            sigma_best = sigmas[best_idx]
+            if best_fitness < self.all_time_best_fitness:
+                self.all_time_best_fitness = best_fitness
+                self.all_time_sigma_best = sigma_best
 
         avg_fitness = np.mean(fitnesses)
-
-        self.utility.print_score(ctr, self.best_fitness, avg_fitness, 10)
 
         if print_w:
             w = np.exp(pdf.w_log)
@@ -38,4 +44,5 @@ class ScoreTracker:
             else:
                 raise Exception("w_log has unsupported shape")
 
-        return self.best_fitness, self.sigma_best
+        self.utility.print_score(ctr, self.all_time_best_fitness, avg_fitness, 10)
+        return best_fitness, avg_fitness, sigma_best

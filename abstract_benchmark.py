@@ -23,6 +23,10 @@ class AbstractBenchmark(ABC):
         distanceMatrix = matrix / constant
         return distanceMatrix, constant
 
+    def unnormalize_fitnesses(self, fitnesses):
+        fitnesses = fitnesses if self.normalizing_constant == 1 else fitnesses * self.normalizing_constant
+        return fitnesses
+
     @abstractmethod
     def compute_fitness(self, population):
         pass
