@@ -18,6 +18,7 @@ import numpy as np
 # from benchmark_lolib import Benchmark
 from benchmark_tsp import Benchmark
 from placket_luce import PlackettLuce, VanillaPdf, PdfRepresentation, ConditionalPdf
+from plackett_luce_algorithm import PlackettLuceAlgorithm
 
 
 def run_experiment():
@@ -31,10 +32,12 @@ def run_experiment():
     U = PlackettLuce.U_identity
 
     benchmark = Benchmark(filename, normalize=True, maximise=False)
-    a = r0123456.r0123456(lr, nb_samples_lambda, numIters, U, benchmark)
     pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
     # pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
-    best_fitness = a.optimize(pdf)
+
+    algorithm = PlackettLuceAlgorithm(lr, nb_samples_lambda, U, benchmark, pdf)
+    a = r0123456.r0123456(algorithm, numIters)
+    best_fitness = a.optimize()
 
     return best_fitness
 
