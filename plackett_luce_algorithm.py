@@ -53,4 +53,4 @@ class PlackettLuceAlgorithm(AbstractAlgorithm):
             if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):
                 break
 
-        return best_fitness, sigma_best
+        return score_tracker.all_time_best_fitness
