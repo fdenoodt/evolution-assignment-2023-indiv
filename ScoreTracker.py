@@ -44,5 +44,5 @@ class ScoreTracker:
             else:
                 raise Exception("w_log has unsupported shape")
 
-        self.utility.print_score(ctr, self.all_time_best_fitness, avg_fitness, 10)
+        self.utility.print_score(ctr, best_fitness, avg_fitness, 10)
         return best_fitness, avg_fitness, sigma_best
