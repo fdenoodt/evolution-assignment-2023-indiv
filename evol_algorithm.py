@@ -8,14 +8,13 @@ import numpy as np
 
 
 class EvolAlgorithm(AbstractAlgorithm):
-    def __init__(self, benchmark):
+    def __init__(self, benchmark, popul_size=1000, offspring_size_multiplier=2, k=3, mutation_rate=0.05):
         self.benchmark = benchmark
 
-        self.popul_size = 1000  # Population size
-        self.offspring_size = self.popul_size * 2  # Offspring size
-        self.k = 3  # Tournament selection
-        self.numIters = 20
-        self.mutation_rate = 0.05
+        self.popul_size = popul_size
+        self.offspring_size = offspring_size_multiplier * popul_size
+        self.k = k  # Tournament selection
+        self.mutation_rate = mutation_rate
         self.keep_running_until_timeup = True
 
         super().__init__()

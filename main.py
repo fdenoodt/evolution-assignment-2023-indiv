@@ -36,7 +36,8 @@ def run_experiment():
     pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
     # pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
     # algorithm = PlackettLuceAlgorithm(lr, nb_samples_lambda, U, benchmark, pdf)
-    algorithm = EvolAlgorithm(benchmark)
+
+    algorithm = EvolAlgorithm(benchmark, popul_size=100, offspring_size_multiplier=1, k=10, mutation_rate=0.05)
     a = r0123456.r0123456(algorithm, numIters)
     best_fitness = a.optimize()
 
