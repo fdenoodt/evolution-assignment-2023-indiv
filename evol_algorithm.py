@@ -38,12 +38,17 @@ class EvolAlgorithm(AbstractAlgorithm):
                 fitnesses, population, ctr, pdf=None,
                 print_w=False)  # pdf, w is only applicable to PlackettLuce, not Evol
 
+            # Selection
             selected = self.selection(population, self.k, self.offspring_size, fitnesses)
+
+            # Variation
             offspring = self.crossover(selected)
             self.mutation(offspring, self.mutation_rate)  # overwrites the offspring
-            joinedPopulation = np.vstack((offspring, population))
-            fitnesses = f(joinedPopulation)
-            population = self.elimination(joinedPopulation, fitnesses)
+            joined_popul = np.vstack((offspring, population))
+
+            # Evaluation / elimination
+            fitnesses = f(joined_popul)
+            population = self.elimination(joined_popul, fitnesses)
 
             ctr += 1
             if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):

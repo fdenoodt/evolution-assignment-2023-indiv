@@ -20,6 +20,10 @@ from benchmark_tsp import Benchmark
 from evol_algorithm import EvolAlgorithm
 from placket_luce import PlackettLuce, VanillaPdf, PdfRepresentation, ConditionalPdf
 from plackett_luce_algorithm import PlackettLuceAlgorithm
+from graph_plotter import GraphPlotter
+
+
+
 
 
 def run_experiment():
@@ -29,7 +33,8 @@ def run_experiment():
     # lr, nb_samples_lambda, numIters, U
     lr = 0.9
     nb_samples_lambda = 100
-    numIters = 1_000_000
+    # numIters = 1_000_000
+    numIters = 200
     U = PlackettLuce.U_identity
 
     benchmark = Benchmark(filename, normalize=True, maximise=False)
@@ -41,13 +46,18 @@ def run_experiment():
     a = r0123456.r0123456(algorithm, numIters)
     best_fitness = a.optimize()
 
+    # plot
+    GraphPlotter.read_file_and_make_graph("r0123456.csv")
+
+
+
     return best_fitness
 
 
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    filename = "./tour50.csv"
+    filename = "./tour750.csv"
     # filename = "./benchmarks/be75eec.mat"
 
     # Set parameters
