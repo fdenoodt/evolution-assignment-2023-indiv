@@ -210,8 +210,8 @@ class EvolAlgorithm(AbstractAlgorithm):
         fathers = selected[::2]
         mothers = selected[1::2]
 
-        # offsprings are in cycle representation
-        offsprings = np.zeros((len(fathers), nb_cities), dtype=int)
+        # offsprings are in adjancency representation, the implicit 0 is not included
+        offsprings = np.zeros((len(fathers), nb_cities - 1), dtype=int)
 
         nb_fathers = len(fathers)
         for i in range(nb_fathers):
@@ -219,12 +219,11 @@ class EvolAlgorithm(AbstractAlgorithm):
             mother = mothers[i]
 
             # 1. Construct edge table
-            father_ciclic = self.edge_table(father, nb_cities)
+            father_ciclic = self.edge_table(father, nb_cities)  # implicit 0 is included
             mother_ciclic = self.edge_table(mother, nb_cities)
 
-            deleted_cities = np.zeros(nb_cities, dtype=bool)
-            # deleted_cities = np.bool_(np.zeros(nb_cities))  # default: false
-            offspring = np.zeros(nb_cities, dtype=int)
+            deleted_cities = np.zeros(nb_cities, dtype=bool)  # default: false
+            offspring = np.zeros(nb_cities, dtype=int)  # implicit 0 is included
 
             # 2. pick an initial elt at rnd and put it in the offspring
             city = random.randint(0, nb_cities - 1)
@@ -236,7 +235,12 @@ class EvolAlgorithm(AbstractAlgorithm):
             for idx in range(nb_cities - 1):
                 curr_elt = self.single_cross_over_step(idx, curr_elt, father_ciclic, mother_ciclic, deleted_cities)
                 offspring[idx + 1] = curr_elt
-                print(curr_elt)
+
+            # offsprings now also contain the 0 somewhere in the middle
+            # so we need to shift it to the start and remove the final element (which is 0)
+            zero_idx = np.where(offspring == 0)[0][0]
+            offspring = np.roll(offspring, shift=-zero_idx, axis=0)
+            offspring = offspring[1:]
 
             offsprings[i, :] = offspring
 
