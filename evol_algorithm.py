@@ -38,6 +38,11 @@ class EvolAlgorithm(AbstractAlgorithm):
                 fitnesses, population, ctr, pdf=None,
                 print_w=False)  # pdf, w is only applicable to PlackettLuce, not Evol
 
+            if ctr % 10 == 0:
+                average_distance = np.mean(
+                    [self.distance(population[i], population[i + 1]) for i in range(len(population) - 1)])
+                print(f"Average distance: {average_distance}")
+
             # Selection
             selected = self.selection(population, self.k, self.offspring_size, fitnesses)
 
@@ -50,8 +55,8 @@ class EvolAlgorithm(AbstractAlgorithm):
             fitnesses = f(joined_popul)
             population = self.elimination(joined_popul, fitnesses)
 
-            for i in range(len(population)):
-                assert len(population[i]) == len(set(population[i])) == n - 1
+            # for i in range(len(population)):
+            #     assert len(population[i]) == len(set(population[i])) == n - 1
 
             ctr += 1
             if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):
@@ -135,13 +140,20 @@ class EvolAlgorithm(AbstractAlgorithm):
 
         # Create edge table (is same as cycle representation)
         parent_ciclic = np.zeros(nb_cities, dtype=int)
-        parent_ciclic[0] = parent[0]
-        current_city_parent_ciclic = parent[0]
+        parent_ciclic[0] = int(parent[0])
+        current_city_parent_ciclic = int(parent[0])
 
         # iterate over parent and add to edge table
         for i in range(nb_cities - 1):
-            parent_ciclic[current_city_parent_ciclic] = parent[i]  # TODO: unsure if % is needed
-            current_city_parent_ciclic = parent[i]
+            try:
+                parent_ciclic[current_city_parent_ciclic] = int(parent[i])  # TODO: unsure if % is needed
+                current_city_parent_ciclic = int(parent[i])
+            except:
+                print("parent:", parent)
+                print("parent_ciclic:", parent_ciclic)
+                print("current_city_parent_ciclic:", current_city_parent_ciclic)
+                print("i:", i)
+                raise
 
         return parent_ciclic
 
@@ -295,6 +307,35 @@ class EvolAlgorithm(AbstractAlgorithm):
             count += 1
         return count
 
+    def distance(self, individual1, individual2):
+        # individual1 and individual2 are in adjacency representation
+        # so we need to convert to cycle representation, then can easily calculate distance by counting edges
+        n = len(individual1) + 1
+        indiv1_cyclic = self.edge_table(individual1, n)  # eg: 1 2 3 4 --> 1 2 3 4 0
+        # add 0 to the start of each individual (implicit starting point)
+        individual2 = np.insert(individual2, 0, 0)  # eg: 1 2 3 4 --> 0 1 2 3 4
+
+        # indiv2: 0 1 2 3 4
+        #         | | | | |
+        #         v v v v v
+        #         0 1 2 3 4
+
+        # indiv1_cyclic: 1 2 3 4 0
+        #                | | | | |
+        #                v v v v v
+        #                2 3 4 0 1
+
+        nb_equal_edges = 0
+        indiv1_points_to = indiv1_cyclic[0]
+        for i in range(n):
+            indiv2_points_to = individual2[(i + 1) % n]
+            if indiv1_points_to == indiv2_points_to:
+                nb_equal_edges += 1
+
+            indiv1_points_to = indiv1_cyclic[indiv1_points_to]
+
+        return n - nb_equal_edges
+
 
 if __name__ == "__main__":
     n = 4
@@ -323,3 +364,9 @@ if __name__ == "__main__":
     print(selected)
     offspring = e.crossover(selected)
     print(offspring)
+
+    print("*" * 20)
+    print("Testing distance")
+
+    print(e.distance(np.array([1, 2, 3, 4]), np.array([1, 2, 3, 4])))
+    print(e.distance(np.array([1, 2, 3, 4]), np.array([1, 2, 4, 3])))
