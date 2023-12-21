@@ -58,11 +58,22 @@ class EvolAlgorithm(AbstractAlgorithm):
 
     def initialize_population(self, population_size, num_cities):
         # returns `population_size` number of permutations of `num_cities` cities
-        # there may be duplicates
+
+        # if would also like to include 0, then do:
         # population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
 
-        population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
-        # we didn't use not-cycle-representation beacuse not easy to ensure that starts and stops at 0
+        # add 0 to the start of each individual (implicit starting point)
+        # values between 1 and num_cities
+        population = np.array([np.random.permutation(num_cities - 1) + 1 for _ in range(population_size)])
+
+        # Our representation (adjacency representation):
+        # eg: 0 1 2 3 4
+        #     | | | | |
+        #     v v v v v
+        #    [2,3,4,0,1]
+        # so order of which city to visit is 2,3,4,0,1
+
+        # We didn't cycle-representation because not easy to ensure that starts and stops at 0
 
         return population
 
@@ -95,7 +106,7 @@ class EvolAlgorithm(AbstractAlgorithm):
     def selection_with_duplicates(self, population, k, nb_individuals_to_select, fitness_scores):
         nb_cities = np.size(population, 1)
         popul_size = np.size(population, 0)
-        selected = np.zeros((nb_individuals_to_select, nb_cities))
+        selected = np.zeros((nb_individuals_to_select, nb_cities), dtype=int)
         for ii in range(nb_individuals_to_select):
             # indices of random individuals
             # random.choices to prevent comparing 2 identical individuals
@@ -106,19 +117,28 @@ class EvolAlgorithm(AbstractAlgorithm):
         return selected  # this may contain duplicates
 
     def edge_table(self, parent, nb_cities):
-        # edge table is the following:
-        # old representation: eg [1 -> 2 -> 3 -> 4 -> 5]
-        # new representation (current):
-        # eg: 0 1 2 3 4
-        #     | | | | |
-        #     v v v v v
-        #    [2,3,4,0,1]
+        assert np.size(parent) == nb_cities - 1  # -1 because we need to add 0 at the start
+        # parent:
+        # 0 1 2 3
+        # | | | |
+        # v v v v
+        # 0 2 1 3
 
+        # parent_cyclic:
+        # 0 1 2 3
+        # | | | |
+        # v v v v
+        # 2 3 1 0
+
+        # Create edge table (is same as cycle representation)
         parent_ciclic = np.zeros(nb_cities, dtype=int)
-        current_city_parent = 0
-        for i in range(nb_cities):
-            parent_ciclic[current_city_parent] = parent[(i + 1) % nb_cities]
-            current_city_parent = int(parent[(i + 1) % nb_cities])
+        parent_ciclic[0] = parent[0]
+        current_city_parent_ciclic = parent[0]
+
+        # iterate over parent and add to edge table
+        for i in range(nb_cities - 1):
+            parent_ciclic[current_city_parent_ciclic] = parent[i]  # TODO: unsure if % is needed
+            current_city_parent_ciclic = parent[i]
 
         return parent_ciclic
 
@@ -127,15 +147,74 @@ class EvolAlgorithm(AbstractAlgorithm):
         offspring = self.edge_crossover(selected)
         return offspring
 
+    def single_cross_over_step(self, idx, curr_elt, father_ciclic, mother_ciclic, deleted_cities):
+        # 4. Remove all references to current element from the table
+        deleted_cities[curr_elt] = True
+
+        # city = 5, edge list = {1, 6} so 5 -> 1
+        # city = 5, edge list = {1, 1}
+
+        # 5. Examine list for current element
+        # • If there is a common edge, pick that to be the next element
+        next_city1 = father_ciclic[curr_elt]
+        next_city2 = mother_ciclic[curr_elt]
+        if next_city1 == next_city2 and not deleted_cities[next_city1]:
+            curr_elt = next_city1
+
+        else:
+            # • Otherwise pick the entry in the list which itself has the shortest list
+            # check if one deleted, then pick other
+            if deleted_cities[next_city1] and not deleted_cities[next_city2]:
+                curr_elt = next_city2
+            elif deleted_cities[next_city2] and not deleted_cities[next_city1]:
+                curr_elt = next_city1
+            elif not (deleted_cities[next_city1]) and not (
+                    deleted_cities[next_city2]):  # so neither are deleted
+                length_city1 = self.get_list_length(father_ciclic, mother_ciclic, next_city1, deleted_cities)
+                length_city2 = self.get_list_length(father_ciclic, mother_ciclic, next_city2, deleted_cities)
+
+                if length_city1 < length_city2:
+                    curr_elt = next_city1
+                elif length_city1 > length_city2:
+                    curr_elt = next_city2
+                else:
+                    curr_elt = next_city1 if random.randint(0, 1) == 0 else next_city2
+
+            else:  # both are deleted so pick random
+                available_cities = np.where(deleted_cities == False)
+                available_cities = available_cities[0]  # cause its a tuple
+
+                assert len(available_cities) > 0
+
+                curr_elt = random.choice(available_cities)
+
+        # • Ties are split at random
+        #   Just pick from the father, if common then its also part of mother.
+        #   There is no randomness, but it is not needed I think since father and mother are random
+
+        # city_points_to1 = father[curr_elt]
+        # city_points_to2 = mother[curr_elt]
+        # curr_elt = city_points_to1 if used_cities[city_points_to1] == 0 else city_points_to2
+
+        # 6. In the case of reaching an empty list, the other end of the offspring is
+        # examined for extension; otherwise a new element is chosen at random
+
+        return curr_elt
+
     def edge_crossover(self, selected):
-        nb_cities = np.size(selected, 1)
+        """
+        :return: offsprings in adjacency representation
+        """
+        nb_cities = np.size(selected, 1) + 1  # +1 because we need to add 0 at the start
 
         fathers = selected[::2]
         mothers = selected[1::2]
 
-        offsprings = np.zeros((len(fathers), nb_cities))
+        # offsprings are in cycle representation
+        offsprings = np.zeros((len(fathers), nb_cities), dtype=int)
 
-        for i in range(len(fathers)):
+        nb_fathers = len(fathers)
+        for i in range(nb_fathers):
             father = fathers[i]
             mother = mothers[i]
 
@@ -143,67 +222,21 @@ class EvolAlgorithm(AbstractAlgorithm):
             father_ciclic = self.edge_table(father, nb_cities)
             mother_ciclic = self.edge_table(mother, nb_cities)
 
-            deleted_cities = np.bool_(np.zeros(nb_cities))  # default: false
-            offspring = np.zeros(nb_cities)
+            deleted_cities = np.zeros(nb_cities, dtype=bool)
+            # deleted_cities = np.bool_(np.zeros(nb_cities))  # default: false
+            offspring = np.zeros(nb_cities, dtype=int)
 
-            # 2. pick a random element and put it in the offspring
+            # 2. pick an initial elt at rnd and put it in the offspring
             city = random.randint(0, nb_cities - 1)
             curr_elt = city
 
-            for l in range(nb_cities - 1):
-                # 3. Set the variable current element = entry
-                offspring[l] = curr_elt
+            # 3. Set the variable current element = entry
+            offspring[0] = curr_elt
 
-                # 4. Remove all references to current element from the table
-                deleted_cities[curr_elt] = True
-
-                # city = 5, edge list = {1, 6} so 5 -> 1
-                # city = 5, edge list = {1, 1}
-
-                # 5. Examine list for current element
-                # • If there is a common edge, pick that to be the next element
-                next_city1 = father_ciclic[curr_elt]
-                next_city2 = mother_ciclic[curr_elt]
-                if next_city1 == next_city2 and not deleted_cities[next_city1]:
-                    curr_elt = next_city1
-
-                else:
-                    # • Otherwise pick the entry in the list which itself has the shortest list
-                    # check if one deleted, then pick other
-                    if deleted_cities[next_city1] and not deleted_cities[next_city2]:
-                        curr_elt = next_city2
-                    elif deleted_cities[next_city2] and not deleted_cities[next_city1]:
-                        curr_elt = next_city1
-                    elif not (deleted_cities[next_city1]) and not (
-                            deleted_cities[next_city2]):  # so neither are deleted
-                        length_city1 = self.get_list_length(father_ciclic, mother_ciclic, next_city1, deleted_cities)
-                        length_city2 = self.get_list_length(father_ciclic, mother_ciclic, next_city2, deleted_cities)
-
-                        if length_city1 < length_city2:
-                            curr_elt = next_city1
-                        elif length_city1 > length_city2:
-                            curr_elt = next_city2
-                        else:
-                            curr_elt = next_city1 if random.randint(0, 1) == 0 else next_city2
-
-                    else:  # both are deleted so pick random
-                        available_cities = np.where(deleted_cities == False)
-                        available_cities = available_cities[0]  # cause its a tuple
-
-                        assert len(available_cities) > 0
-
-                        curr_elt = random.choice(available_cities)
-
-                # • Ties are split at random
-                #   Just pick from the father, if common then its also part of mother.
-                #   There is no randomness, but it is not needed I think since father and mother are random
-
-                # city_points_to1 = father[curr_elt]
-                # city_points_to2 = mother[curr_elt]
-                # curr_elt = city_points_to1 if used_cities[city_points_to1] == 0 else city_points_to2
-
-                # 6. In the case of reaching an empty list, the other end of the offspring is
-                # examined for extension; otherwise a new element is chosen at random
+            for idx in range(nb_cities - 1):
+                curr_elt = self.single_cross_over_step(idx, curr_elt, father_ciclic, mother_ciclic, deleted_cities)
+                offspring[idx + 1] = curr_elt
+                print(curr_elt)
 
             offsprings[i, :] = offspring
 
@@ -254,3 +287,32 @@ class EvolAlgorithm(AbstractAlgorithm):
         if not (deleted_cities[next_city_m]) and next_city_m != next_city_f:  # deleted -> 0
             count += 1
         return count
+
+
+if __name__ == "__main__":
+    n = 4
+
+    # parent = np.array([1, 3, 0, 2]) #np.random.permutation(n)
+    # parent = np.array([0, 3, 1, 2])  # np.random.permutation(n)
+
+    print("*" * 20)
+    parent = np.array([2, 1, 3])  # 0, 2, 1, 3 but 0 is implicit
+    e = EvolAlgorithm(None)
+    parent_cyclic = e.edge_table(parent, n)  # 2 3 1 0
+    print(parent)
+    print(parent_cyclic)
+
+    print("*" * 20)
+    print("Testing population initialization")
+    popul = e.initialize_population(10, n)
+    print(popul.shape)
+    print(popul)
+
+    print("*" * 20)
+    print("Testing crossover")
+    # selected = np.array([popul[0], popul[0]])  # 2x same individual --> so crossover should be same
+    # selected = np.array(([1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8]), dtype=int)
+    selected = np.array(([1, 2], [1, 2]), dtype=int)
+    print(selected)
+    offspring = e.crossover(selected)
+    print(offspring)
