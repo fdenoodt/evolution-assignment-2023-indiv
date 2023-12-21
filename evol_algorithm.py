@@ -50,6 +50,9 @@ class EvolAlgorithm(AbstractAlgorithm):
             fitnesses = f(joined_popul)
             population = self.elimination(joined_popul, fitnesses)
 
+            for i in range(len(population)):
+                assert len(population[i]) == len(set(population[i])) == n - 1
+
             ctr += 1
             if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):
                 break
