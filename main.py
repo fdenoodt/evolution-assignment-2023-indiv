@@ -57,7 +57,7 @@ def run_experiment():
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    filename = "./tour750.csv"
+    filename = "./tour50.csv"
     # filename = "./benchmarks/be75eec.mat"
 
     # Set parameters

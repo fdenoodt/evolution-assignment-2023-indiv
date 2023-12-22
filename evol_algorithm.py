@@ -38,6 +38,8 @@ class EvolAlgorithm(AbstractAlgorithm):
             fitnesses = self.fitness_sharing(fitnesses_not_scaled, population)
             # fitnesses = fitnesses_not_scaled
 
+            popul_dist = self.avg_dist_func(population)
+
             # Update scores
             best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
                 fitnesses_not_scaled, population, ctr,
@@ -355,31 +357,37 @@ class EvolAlgorithm(AbstractAlgorithm):
 
         return n - nb_equal_edges
 
-    def fitness_sharing(self, fitnesses, population):
-        fitnesses = fitnesses.copy()
+    def fitness_sharing(self, fitnesses_org, population):
+        fitnesses = fitnesses_org.copy()
         popul_size = len(population)
         n = len(population[0])
 
         # randomly take 10% of the population to consider for sharing
-        sub_popul_percent = 0.1
+        sub_popul_percent = 0.1  # problem w/ subpopul is that for specific individuals, distance is 0 and for its very large
+        # so can be that indiv is not included in neighbourhood so sharing val is 0. needs to be included in neighbourhood!
         sub_popul_size = int(popul_size * sub_popul_percent)
-        # subpopulation = np.random.choice(population, sub_popul_size, replace=False) # assumes population is 1d
 
-        subpopulation = population[:sub_popul_size]
+        subpopulation = population[:sub_popul_size]  # take first 10% of population
+        # for remaining 90% of population, add 1 to the sharing val
 
         for i in range(len(population)):
             # sharing_vals = [self.sharing_function(self.distance(population[i], subpopulation[j]), max_distance=n)
             #                 for j in range(sub_popul_size)]
 
             sharing_vals = np.zeros(sub_popul_size, dtype=np.float64)
+
             for j in range(sub_popul_size):
                 dist = self.distance(population[i], subpopulation[j])
-                sharing_val = self.sharing_function(dist, max_distance=n)
-                sharing_vals[j] = sharing_val
 
-            sum = np.sum(sharing_vals)  # dependent on the subpopulation size
+                sharing_val = self.sharing_function(dist, max_distance=n)
+                sharing_vals[j] += sharing_val
+
+            sum = np.sum(sharing_vals)  # dependent on the subpopulation sizedfsafds
             # So to rescale, we divide by the subpopulation percent
             sum = sum / sub_popul_percent
+
+            # add 1 to the sharing val (sum) for the remaining 90% of the population (as explained above due to subpopul not including all individuals)
+            sum += 1 if i >= sub_popul_size else 0
             fitnesses[i] = fitnesses[i] * sum
 
         return fitnesses
@@ -390,13 +398,13 @@ class EvolAlgorithm(AbstractAlgorithm):
         # with similarity = # edges in common
         # so if path is 750 cities, punish node if it has a neighbour w/ 7.5 edges in common
         # sigma_share = max_distance * 0.1
-        # sigma_share = 350 # half of max distance
+        sigma_share = 5  # half of max distance
 
-        sigma_share = int(max_distance * 0.2) # start punishing when 750 * 0.2 = 150 edges in common
+        # sigma_share = int(max_distance * 0.2) # start punishing when 750 * 0.2 = 150 edges in common
 
         # alpha++ increases the penalty for being close to another individual
         # alpha-- decreases the penalty for being close to another individual
-        alpha = 0.1
+        alpha = 0.001
         if d <= sigma_share:
             val = 1 - (d / sigma_share) ** alpha
             return val
