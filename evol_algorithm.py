@@ -36,9 +36,6 @@ class EvolAlgorithm(AbstractAlgorithm):
 
             # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
             fitnesses = self.fitness_sharing(fitnesses_not_scaled, population)
-            # fitnesses = fitnesses_not_scaled
-
-            popul_dist = self.avg_dist_func(population)
 
             # Update scores
             best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
@@ -47,10 +44,6 @@ class EvolAlgorithm(AbstractAlgorithm):
                 pdf=None, print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
                 avg_dist_func=lambda: self.avg_dist_func(population)  # only applicable to Evol, not PlackettLuce
             )
-
-            # print(np.mean(fitnesses_not_scaled))
-            # print(np.mean(fitnesses))
-            # best_fitness, mean_fitness, sigma_best = 0, 0, np.array([0, 0])
 
             # Selection
             selected = self.selection(population, self.k, self.offspring_size, fitnesses)
@@ -398,13 +391,18 @@ class EvolAlgorithm(AbstractAlgorithm):
         # with similarity = # edges in common
         # so if path is 750 cities, punish node if it has a neighbour w/ 7.5 edges in common
         # sigma_share = max_distance * 0.1
-        sigma_share = 5  # half of max distance
+        # sigma_share = max_distance * 0.2  # half of max distance
+
+        # = max neighbourhood distance
+        # sigma_share++ increases the neighbourhood distance -> more individuals are punished
+        # sigma_share-- decreases the neighbourhood distance -> less individuals are punished
+        sigma_share = max_distance * 0.5
 
         # sigma_share = int(max_distance * 0.2) # start punishing when 750 * 0.2 = 150 edges in common
 
         # alpha++ increases the penalty for being close to another individual
         # alpha-- decreases the penalty for being close to another individual
-        alpha = 0.001
+        alpha = 2
         if d <= sigma_share:
             val = 1 - (d / sigma_share) ** alpha
             return val
