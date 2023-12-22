@@ -350,7 +350,46 @@ class EvolAlgorithm(AbstractAlgorithm):
 
         return n - nb_equal_edges
 
+    def get_single_fitness_shared(self, org_fitness, population, subpopulation, sub_popul_size, sub_popul_percent, i,
+                                  n):
+
+        sharing_vals = [self.sharing_function(self.distance(population[i], subpopulation[j]), max_distance=n)
+                        for j in range(sub_popul_size)]
+
+        sum = np.sum(sharing_vals)  # dependent on the subpopulation sizedfsafds
+        # So to rescale, we divide by the subpopulation percent
+        sum = sum / sub_popul_percent
+
+        # add 1 to the sharing val (sum) for the remaining 90% of the population (as explained above due to subpopul not including all individuals)
+        sum += 1 if i >= sub_popul_size else 0
+
+        fitness_shared = org_fitness * sum
+        return fitness_shared
+
     def fitness_sharing(self, fitnesses_org, population):
+        popul_size = len(population)
+        n = len(population[0])
+
+        # randomly take 10% of the population to consider for sharing
+        sub_popul_percent = 0.1  # problem w/ subpopul is that for specific individuals, distance is 0 and for its very large
+        # so can be that indiv is not included in neighbourhood so sharing val is 0. needs to be included in neighbourhood!
+        sub_popul_size = int(popul_size * sub_popul_percent)
+
+        subpopulation = population[:sub_popul_size]  # take first 10% of population
+        # for remaining 90% of population, add 1 to the sharing val
+
+        fitnesses_shared = np.array(
+            [self.get_single_fitness_shared(
+                fitnesses_org[i],
+                population,
+                subpopulation,
+                sub_popul_size,
+                sub_popul_percent, i, n)
+                for i in range(len(population))])
+
+        return fitnesses_shared
+
+    def fitness_sharing_slow(self, fitnesses_org, population):
         fitnesses = fitnesses_org.copy()
         popul_size = len(population)
         n = len(population[0])
@@ -364,8 +403,6 @@ class EvolAlgorithm(AbstractAlgorithm):
         # for remaining 90% of population, add 1 to the sharing val
 
         for i in range(len(population)):
-            # sharing_vals = [self.sharing_function(self.distance(population[i], subpopulation[j]), max_distance=n)
-            #                 for j in range(sub_popul_size)]
 
             sharing_vals = np.zeros(sub_popul_size, dtype=np.float64)
 
@@ -396,13 +433,13 @@ class EvolAlgorithm(AbstractAlgorithm):
         # = max neighbourhood distance
         # sigma_share++ increases the neighbourhood distance -> more individuals are punished
         # sigma_share-- decreases the neighbourhood distance -> less individuals are punished
-        sigma_share = max_distance * 0.5
+        sigma_share = max_distance * 0.2
 
         # sigma_share = int(max_distance * 0.2) # start punishing when 750 * 0.2 = 150 edges in common
 
         # alpha++ increases the penalty for being close to another individual
         # alpha-- decreases the penalty for being close to another individual
-        alpha = 2
+        alpha = 1
         if d <= sigma_share:
             val = 1 - (d / sigma_share) ** alpha
             return val
@@ -457,14 +494,24 @@ if __name__ == "__main__":
     fitnesses = np.array([100, 100, 100, 100, 100], dtype=np.float64)
     population = np.array([[1, 2, 3, 4], [1, 2, 4, 3], [1, 3, 2, 4], [1, 3, 4, 2], [1, 4, 2, 3]])
 
-    print(e.fitness_sharing(fitnesses, population))
-
     # compare time between fitness sharing and fitness sharing fast
     import time
 
+    n = 100
+    fitnesses = np.random.rand(n)
+    population = np.random.rand(n, n)
+    e = EvolAlgorithm(None)
+
     time1 = time.time()
-    for i in range(1000):
+    for i in range(10):
         e.fitness_sharing(fitnesses, population)
 
     time2 = time.time()
     print("time1:", time2 - time1)
+
+    time1 = time.time()
+    for i in range(10):
+        e.fitness_sharing_slow(fitnesses, population)
+
+    time2 = time.time()
+    print("time2:", time2 - time1)
