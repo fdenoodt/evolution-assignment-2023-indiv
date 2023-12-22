@@ -32,10 +32,11 @@ class EvolAlgorithm(AbstractAlgorithm):
         ctr = 0
         while True:
 
-            fitnesses_not_scaled = f(population) # before fitness sharing
+            fitnesses_not_scaled = f(population)  # before fitness sharing
 
             # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
             fitnesses = self.fitness_sharing(fitnesses_not_scaled, population)
+            # fitnesses = fitnesses_not_scaled
 
             # Update scores
             best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
@@ -364,14 +365,18 @@ class EvolAlgorithm(AbstractAlgorithm):
         sub_popul_size = int(popul_size * sub_popul_percent)
         # subpopulation = np.random.choice(population, sub_popul_size, replace=False) # assumes population is 1d
 
-        # fix:
-        # TODO: need to think about this, whether there should be a shuffle or not
-        subpopulation = population[
-                        :sub_popul_size]
+        subpopulation = population[:sub_popul_size]
 
         for i in range(len(population)):
-            sharing_vals = [self.sharing_function(self.distance(population[i], subpopulation[j]), max_distance=n)
-                            for j in range(sub_popul_size)]
+            # sharing_vals = [self.sharing_function(self.distance(population[i], subpopulation[j]), max_distance=n)
+            #                 for j in range(sub_popul_size)]
+
+            sharing_vals = np.zeros(sub_popul_size, dtype=np.float64)
+            for j in range(sub_popul_size):
+                dist = self.distance(population[i], subpopulation[j])
+                sharing_val = self.sharing_function(dist, max_distance=n)
+                sharing_vals[j] = sharing_val
+
             sum = np.sum(sharing_vals)  # dependent on the subpopulation size
             # So to rescale, we divide by the subpopulation percent
             sum = sum / sub_popul_percent
@@ -381,10 +386,20 @@ class EvolAlgorithm(AbstractAlgorithm):
 
     def sharing_function(self, d, max_distance):
         # sigma_share is based on the maximum distance between any two individuals in the population, which is n
-        sigma_share = max_distance * 0.2
-        alpha = 1
+        # so only punish a candidate solution if it has a neighbour that is 1% of the max distance away
+        # with similarity = # edges in common
+        # so if path is 750 cities, punish node if it has a neighbour w/ 7.5 edges in common
+        # sigma_share = max_distance * 0.1
+        # sigma_share = 350 # half of max distance
+
+        sigma_share = int(max_distance * 0.2) # start punishing when 750 * 0.2 = 150 edges in common
+
+        # alpha++ increases the penalty for being close to another individual
+        # alpha-- decreases the penalty for being close to another individual
+        alpha = 0.1
         if d <= sigma_share:
-            return 1 - (d / sigma_share) ** alpha
+            val = 1 - (d / sigma_share) ** alpha
+            return val
         else:
             return 0
 
