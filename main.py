@@ -34,7 +34,7 @@ def run_experiment():
     lr = 0.9
     nb_samples_lambda = 100
     # numIters = 1_000_000
-    numIters = 200
+    numIters = 3000
     U = PlackettLuce.U_identity
 
     benchmark = Benchmark(filename, normalize=True, maximise=False)

@@ -1,4 +1,4 @@
-import random
+# import random
 
 from ScoreTracker import ScoreTracker
 from abstract_algorithm import AbstractAlgorithm
@@ -34,14 +34,23 @@ class EvolAlgorithm(AbstractAlgorithm):
 
             fitnesses = f(population)
 
-            best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
-                fitnesses, population, ctr, pdf=None,
-                print_w=False)  # pdf, w is only applicable to PlackettLuce, not Evol
+            # best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
+            #     fitnesses, population, ctr, pdf=None,
+            #     print_w=False)  # pdf, w is only applicable to PlackettLuce, not Evol
+
+            best_fitness, mean_fitness, sigma_best = 0, 0, np.zeros(n)
 
             if ctr % 10 == 0:
                 average_distance = np.mean(
                     [self.distance(population[i], population[i + 1]) for i in range(len(population) - 1)])
-                print(f"Average distance: {average_distance}")
+                print(f"{ctr} - Average distance: {average_distance}")
+
+            # Fitness sharing
+            fitnesses_ = self.fitness_sharing(fitnesses, population)
+
+            if ctr % 10 == 0:
+                print("fitnesses:", np.mean(fitnesses))
+                print("fitnesses_:", np.mean(fitnesses_))
 
             # Selection
             selected = self.selection(population, self.k, self.offspring_size, fitnesses)
@@ -54,6 +63,9 @@ class EvolAlgorithm(AbstractAlgorithm):
             # Evaluation / elimination
             fitnesses = f(joined_popul)
             population = self.elimination(joined_popul, fitnesses)
+
+            # shuffle population
+            np.random.shuffle(population)
 
             # for i in range(len(population)):
             #     assert len(population[i]) == len(set(population[i])) == n - 1
@@ -118,7 +130,8 @@ class EvolAlgorithm(AbstractAlgorithm):
         for ii in range(nb_individuals_to_select):
             # indices of random individuals
             # random.choices to prevent comparing 2 identical individuals
-            ri = random.choices(range(popul_size), k=k)
+            # ri = random.choices(range(popul_size), k=k)
+            ri = np.random.choice(range(popul_size), k, replace=True)
             min = np.argmin(fitness_scores[ri])  # take the single best
             best_indiv_idx = ri[min]
             selected[ii, :] = population[best_indiv_idx, :]
@@ -193,7 +206,10 @@ class EvolAlgorithm(AbstractAlgorithm):
                 elif length_city1 > length_city2:
                     curr_elt = next_city2
                 else:
-                    curr_elt = next_city1 if random.randint(0, 1) == 0 else next_city2
+                    # np upperbound is exclusive
+                    curr_elt = next_city1 if np.random.randint(0, 1 + 1) == 0 else next_city2
+                    # curr_elt = next_city1 if random.randint(0, 1) == 0 else next_city2
+
 
             else:  # both are deleted so pick random
                 available_cities = np.where(deleted_cities == False)
@@ -201,7 +217,8 @@ class EvolAlgorithm(AbstractAlgorithm):
 
                 assert len(available_cities) > 0
 
-                curr_elt = random.choice(available_cities)
+                curr_elt = np.random.choice(available_cities)
+                # curr_elt = random.choice(available_cities)
 
         # • Ties are split at random
         #   Just pick from the father, if common then its also part of mother.
@@ -241,7 +258,8 @@ class EvolAlgorithm(AbstractAlgorithm):
             offspring = np.zeros(nb_cities, dtype=int)  # implicit 0 is included
 
             # 2. pick an initial elt at rnd and put it in the offspring
-            city = random.randint(0, nb_cities - 1)
+            # city = random.randint(0, nb_cities - 1)
+            city = np.random.randint(0, nb_cities)  # np.random.randint upperboun is exclusive
             curr_elt = city
 
             # 3. Set the variable current element = entry
@@ -267,8 +285,10 @@ class EvolAlgorithm(AbstractAlgorithm):
         nb_cities = np.size(offspring, 1)
         for i in range(len(offspring)):
             individual = offspring[i]
-            idx1 = random.randint(0, nb_cities - 1)
-            idx2 = random.randint(0, nb_cities - 1)
+            # idx1 = random.randint(0, nb_cities - 1)
+            # idx2 = random.randint(0, nb_cities - 1)
+            idx1 = np.random.randint(0, nb_cities)  # np.random.randint upperboun is exclusive
+            idx2 = np.random.randint(0, nb_cities)  # np.random.randint upperboun is exclusive
             individual[idx1], individual[idx2] = individual[idx2], individual[idx1]
 
     def mutation(self, offspring_popul, mutation_rate):
@@ -336,6 +356,40 @@ class EvolAlgorithm(AbstractAlgorithm):
 
         return n - nb_equal_edges
 
+    def fitness_sharing(self, fitnesses, population):
+        fitnesses = fitnesses.copy()
+        popul_size = len(population)
+        n = len(population[0])
+
+        # randomly take 10% of the population to consider for sharing
+        sub_popul_percent = 0.1
+        sub_popul_size = int(popul_size * sub_popul_percent)
+        # subpopulation = np.random.choice(population, sub_popul_size, replace=False) # assumes population is 1d
+
+        # fix:
+        # TODO: need to think about this, whether there should be a shuffle or not
+        subpopulation = population[
+                        :sub_popul_size]
+
+        for i in range(len(population)):
+            sharing_vals = [self.sharing_function(self.distance(population[i], subpopulation[j]), max_distance=n)
+                            for j in range(sub_popul_size)]
+            sum = np.sum(sharing_vals)  # dependent on the subpopulation size
+            # So to rescale, we divide by the subpopulation percent
+            sum = sum / sub_popul_percent
+            fitnesses[i] = fitnesses[i] * sum
+
+        return fitnesses
+
+    def sharing_function(self, d, max_distance):
+        # sigma_share is based on the maximum distance between any two individuals in the population, which is n
+        sigma_share = max_distance * 0.8
+        alpha = 1
+        if d <= sigma_share:
+            return 1 - (d / sigma_share) ** alpha
+        else:
+            return 0
+
 
 if __name__ == "__main__":
     n = 4
@@ -370,3 +424,20 @@ if __name__ == "__main__":
 
     print(e.distance(np.array([1, 2, 3, 4]), np.array([1, 2, 3, 4])))
     print(e.distance(np.array([1, 2, 3, 4]), np.array([1, 2, 4, 3])))
+
+    print("*" * 20)
+    print("Testing fitness sharing")
+    fitnesses = np.array([100, 100, 100, 100, 100], dtype=np.float64)
+    population = np.array([[1, 2, 3, 4], [1, 2, 4, 3], [1, 3, 2, 4], [1, 3, 4, 2], [1, 4, 2, 3]])
+
+    print(e.fitness_sharing(fitnesses, population))
+
+    # compare time between fitness sharing and fitness sharing fast
+    import time
+
+    time1 = time.time()
+    for i in range(1000):
+        e.fitness_sharing(fitnesses, population)
+
+    time2 = time.time()
+    print("time1:", time2 - time1)
