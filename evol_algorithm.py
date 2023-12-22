@@ -65,8 +65,8 @@ class EvolAlgorithm(AbstractAlgorithm):
             np.random.shuffle(population)
 
             # sanity check
-            # for i in range(len(population)):
-            #     assert len(population[i]) == len(set(population[i])) == n - 1
+            for i in range(len(population)):
+                assert len(population[i]) == len(set(population[i])) == n - 1
 
             ctr += 1
             if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):
@@ -373,9 +373,16 @@ class EvolAlgorithm(AbstractAlgorithm):
         sum += 1 if i >= sub_popul_size else 0
 
         fitness_shared = org_fitness * sum
-        return fitness_shared
+        return fitness_shared, sum  # the sum is the penalty for being close to another individual
 
     def fitness_sharing(self, fitnesses_org, population):
+        """
+        The fitness sharing function is used to punish individuals that are close to other individuals.
+        However, the fitness sharing function is computationally expensive, so we only compute it for the first 10% of the population.
+        In addition for this 10%, we only compare it to the first 10% of the population, again for computational reasons. This gives an estimate of the real fitness sharing value.
+
+        The remaining 90% of the population receives a sharing val of fitness * avg sharing val multiplier.
+        """
         popul_size = len(population)
         n = len(population[0])
 
@@ -387,15 +394,30 @@ class EvolAlgorithm(AbstractAlgorithm):
         subpopulation = population[:sub_popul_size]  # take first 10% of population
         # for remaining 90% of population, add 1 to the sharing val
 
-        # shared_fitness_val is computed for each individual in the population
-        fitnesses_shared = np.array(
+        # since computationally expensive, only compute for the first 10% of the population, the rest receives a sharing val of fitness * avg sharing val multiplier
+        fitnesses_shared_and_sum = np.zeros((popul_size, 2), dtype=np.float64)
+
+        # pick the last 10% of the population (the first 10% is used to compare against: subpopulation, see get_single_fitness_shared)
+        indices_steekproef = np.arange(popul_size - sub_popul_size,
+                                       popul_size)  # of these the shared_fitness is actually computed
+        fitnesses_shared_and_sum[indices_steekproef, :] = np.array(
             [self.get_single_fitness_shared(
                 fitnesses_org[i],
                 population,
                 subpopulation,
                 sub_popul_size,
                 sub_popul_percent, i, n)
-                for i in range(popul_size)])
+                for i in indices_steekproef])
+
+        fitnesses_shared = fitnesses_shared_and_sum[:, 0]
+        penalty_sums = fitnesses_shared_and_sum[:, 1]
+
+        # of these the shared_fitness is not computed, and their shared_fitness is defined as `fitness * avg penalty sum`
+        indices_avg = np.arange(popul_size - sub_popul_size)
+
+        # the rest of the population receives a sharing val of fitness * avg sharing val multiplier
+        avg_sum = np.mean(penalty_sums[indices_steekproef])
+        fitnesses_shared[indices_avg] = fitnesses_org[indices_avg] * avg_sum
 
         return fitnesses_shared
 
