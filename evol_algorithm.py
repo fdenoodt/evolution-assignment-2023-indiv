@@ -72,7 +72,6 @@ class EvolAlgorithm(AbstractAlgorithm):
             if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):
                 break
 
-
         return score_tracker.all_time_best_fitness
 
     def initialize_population(self, population_size, num_cities):
@@ -358,15 +357,19 @@ class EvolAlgorithm(AbstractAlgorithm):
 
     def get_single_fitness_shared(self, org_fitness, population, subpopulation, sub_popul_size, sub_popul_percent, i,
                                   n):
+        # A single individual must be compared to all individuals in the subpopulation
 
-        sharing_vals = [self.sharing_function(self.distance(population[i], subpopulation[j]), max_distance=n)
-                        for j in range(sub_popul_size)]
+        sharing_vals = [
+            self.sharing_function(
+                self.distance(population[i], subpopulation[j]) if not (i == j) else 0,  # if i == j then distance is 0
+                max_distance=n)
+            for j in range(sub_popul_size)]
 
         sum = np.sum(sharing_vals)  # dependent on the subpopulation sizedfsafds
         # So to rescale, we divide by the subpopulation percent
         sum = sum / sub_popul_percent
 
-        # add 1 to the sharing val (sum) for the remaining 90% of the population (as explained above due to subpopul not including all individuals)
+        # add 1 to the sharing val (sum) for the remaining 90% of the population (as explained in `fitness_sharing` func due to subpopul not including all individuals)
         sum += 1 if i >= sub_popul_size else 0
 
         fitness_shared = org_fitness * sum
@@ -384,6 +387,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         subpopulation = population[:sub_popul_size]  # take first 10% of population
         # for remaining 90% of population, add 1 to the sharing val
 
+        # shared_fitness_val is computed for each individual in the population
         fitnesses_shared = np.array(
             [self.get_single_fitness_shared(
                 fitnesses_org[i],
@@ -391,7 +395,7 @@ class EvolAlgorithm(AbstractAlgorithm):
                 subpopulation,
                 sub_popul_size,
                 sub_popul_percent, i, n)
-                for i in range(len(population))])
+                for i in range(popul_size)])
 
         return fitnesses_shared
 
