@@ -44,15 +44,17 @@ class EvolAlgorithm(AbstractAlgorithm):
 
         ctr = 0
         while True:
-            best_fitness, mean_fitness, best_sigma = 0, 0, np.array([0, 0])
+            # run for a few epochs
+            ctr, best_fitness, mean_fitness, best_sigma = \
+                Island.run_epochs(self.migrate_after_epochs, islands,
+                                  selection, elimination, mutation,
+                                  score_tracker, ctr)
 
-            for idx, island in enumerate(islands):
-                # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
-                best_fitness, mean_fitness, best_sigma = island.step(
-                    selection, elimination, mutation, score_tracker, ctr)
+            # migrate
+            Island.migrate(islands, self.popul_size)
 
-            ctr += 1
-            if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, best_sigma):
+            if score_tracker.utility.is_done_and_report(
+                    ctr, mean_fitness, best_fitness, best_sigma):
                 break
 
         return score_tracker.all_time_best_fitness

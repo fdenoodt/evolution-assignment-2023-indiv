@@ -32,6 +32,20 @@ class Island:
 
         return population
 
+    @staticmethod
+    def run_epochs(nb_epochs, islands, selection, elimination, mutation, score_tracker, ctr):
+        best_fitness, mean_fitness, best_sigma = None, None, None
+
+        for epoch in range(nb_epochs):
+            for idx, island in enumerate(islands):
+                # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
+                best_fitness, mean_fitness, best_sigma = island.step(
+                    selection, elimination, mutation, score_tracker, ctr)
+
+            ctr += 1
+
+        return ctr, best_fitness, mean_fitness, best_sigma
+
     def step(self, selection, elimination, mutation, score_tracker, ctr):
         fitnesses_not_scaled = self.f(self.population)  # before fitness sharing
 
@@ -43,7 +57,8 @@ class Island:
             fitnesses_not_scaled, self.population, ctr,
             fitnesses_shared=fitnesses,
             pdf=None, print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
-            avg_dist_func=lambda: FitnessSharing.avg_dist_func(self.population)  # only applicable to Evol, not PlackettLuce
+            avg_dist_func=lambda: FitnessSharing.avg_dist_func(self.population)
+            # only applicable to Evol, not PlackettLuce
         )
 
         # Selection
@@ -70,6 +85,32 @@ class Island:
         #     assert len(population[i]) == len(set(population[i])) == n - 1
 
         return best_fitness, mean_fitness, best_sigma
+
+    @staticmethod
+    def migrate(islands, popul_size, percentage=0.1):
+        # 10% of the population migrates to the next island
+        assert len(islands) > 1
+        migrants = islands[-1].population[:int(popul_size * percentage)]
+        for idx, island in enumerate(islands):
+            migrants = island._migrate(migrants)
+
+    def _migrate(self, other_island_migrants):
+        nb_migrants = len(other_island_migrants)
+        our_migrants = self.population[:nb_migrants].copy()  # take first nb_migrants, already shuffled
+        self.population[:nb_migrants] = other_island_migrants
+
+        # np.random.shuffle(self.population)
+
+        return our_migrants
+
+        # Function Entirely generated via Copilot
+
+        # migrate 10% of the population
+        # nb_migrants = int(self.popul_size * 0.1)
+        # indices_migrants = np.random.choice(self.popul_size, nb_migrants, replace=False)
+        #
+        # # migrate the selected individuals
+        # self.population[indices_migrants] = other_island.population[indices_migrants]
 
 
 class FitnessSharing:
@@ -239,3 +280,20 @@ class FitnessSharing:
         average_distance = np.mean(
             [FitnessSharing.distance(population[i], population[i + 1]) for i in range(len(population) - 1)])
         return average_distance
+
+
+if __name__ == "__main__":
+    print("*" * 20)
+    print("Test migration")
+    n = 8
+    popul_size = 4
+    islands = [Island(i, None, popul_size, n) for i in range(3)]
+    print("Before migration")
+    print(islands[0].population)
+    print(islands[1].population)
+    print(islands[2].population)
+    Island.migrate(islands, popul_size, percentage=0.5)
+    print("After migration")
+    print(islands[0].population)
+    print(islands[1].population)
+    print(islands[2].population)
