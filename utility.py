@@ -8,9 +8,16 @@ class Utility:
         self.keep_running_until_timeup = keep_running_until_timeup
         self.numIters = numIters
 
-    def print_score(self, ctr, best_fitness, avg_fitness, frequency=10):
+    def print_score(self, ctr, best_fitness, avg_fitness, frequency=10, avg_dist_func=None):
         if ctr % frequency == 0:
-            print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
+            # print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
+
+            if callable(avg_dist_func):
+                average_distance = avg_dist_func()
+                print(
+                    f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}, avg dist: {average_distance:_.4f}")
+            else:
+                print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
 
     @staticmethod
     def print_mtx(mtx, ctr, frequency=10, sub_mtx=None):

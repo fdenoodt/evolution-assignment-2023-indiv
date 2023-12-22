@@ -23,9 +23,6 @@ from plackett_luce_algorithm import PlackettLuceAlgorithm
 from graph_plotter import GraphPlotter
 
 
-
-
-
 def run_experiment():
     print("*******************************************************************")
     print("Running experiment with parameters:")
@@ -44,12 +41,15 @@ def run_experiment():
 
     algorithm = EvolAlgorithm(benchmark, popul_size=100, offspring_size_multiplier=1, k=10, mutation_rate=0.05)
     a = r0123456.r0123456(algorithm, numIters)
-    best_fitness = a.optimize()
 
-    # plot
-    GraphPlotter.read_file_and_make_graph("r0123456.csv")
-
-
+    try:
+        best_fitness = a.optimize()
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt")
+        best_fitness = 0
+    finally:
+        # plot
+        GraphPlotter.read_file_and_make_graph("r0123456.csv")
 
     return best_fitness
 

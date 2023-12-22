@@ -12,7 +12,7 @@ class ScoreTracker:
         self.utility = Utility(reporter, keep_running_until_timeup, numIters)
         self.benchmark = benchmark
 
-    def update_scores(self, fitnesses, sigmas, ctr, pdf, print_w=False):
+    def update_scores(self, fitnesses, sigmas, ctr, pdf, print_w=False, avg_dist_func=None):
 
         fitnesses = self.benchmark.unnormalize_fitnesses(fitnesses)
 
@@ -44,5 +44,5 @@ class ScoreTracker:
             else:
                 raise Exception("w_log has unsupported shape")
 
-        self.utility.print_score(ctr, best_fitness, avg_fitness, 10)
+        self.utility.print_score(ctr, best_fitness, avg_fitness, 10, avg_dist_func)
         return best_fitness, avg_fitness, sigma_best

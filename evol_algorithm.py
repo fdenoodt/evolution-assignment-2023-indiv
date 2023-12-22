@@ -34,23 +34,18 @@ class EvolAlgorithm(AbstractAlgorithm):
 
             fitnesses = f(population)
 
-            # best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
-            #     fitnesses, population, ctr, pdf=None,
-            #     print_w=False)  # pdf, w is only applicable to PlackettLuce, not Evol
-
-            best_fitness, mean_fitness, sigma_best = 0, 0, np.zeros(n)
-
-            if ctr % 10 == 0:
-                average_distance = np.mean(
-                    [self.distance(population[i], population[i + 1]) for i in range(len(population) - 1)])
-                print(f"{ctr} - Average distance: {average_distance}")
+            best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
+                fitnesses, population, ctr, pdf=None,
+                print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
+                avg_dist_func=lambda: self.avg_dist_func(population)  # only applicable to Evol, not PlackettLuce
+            )
 
             # Fitness sharing
-            fitnesses_ = self.fitness_sharing(fitnesses, population)
+            # fitnesses_ = self.fitness_sharing(fitnesses, population)
 
-            if ctr % 10 == 0:
-                print("fitnesses:", np.mean(fitnesses))
-                print("fitnesses_:", np.mean(fitnesses_))
+            # if ctr % 10 == 0:
+            #     print("fitnesses:", np.mean(fitnesses))
+            #     print("fitnesses_:", np.mean(fitnesses_))
 
             # Selection
             selected = self.selection(population, self.k, self.offspring_size, fitnesses)
@@ -67,6 +62,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             # shuffle population
             np.random.shuffle(population)
 
+            # sanity check
             # for i in range(len(population)):
             #     assert len(population[i]) == len(set(population[i])) == n - 1
 
@@ -389,6 +385,14 @@ class EvolAlgorithm(AbstractAlgorithm):
             return 1 - (d / sigma_share) ** alpha
         else:
             return 0
+
+    def avg_dist_func(self, population):
+        """
+        Approximation of the average distance between individuals in the population
+        """
+        average_distance = np.mean(
+            [self.distance(population[i], population[i + 1]) for i in range(len(population) - 1)])
+        return average_distance
 
 
 if __name__ == "__main__":
