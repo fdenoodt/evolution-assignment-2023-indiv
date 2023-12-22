@@ -2,16 +2,18 @@
 
 from ScoreTracker import ScoreTracker
 from abstract_algorithm import AbstractAlgorithm
-from diversity import Diversity
+from diversity import Island, FitnessSharing
 from placket_luce import PlackettLuce
 
 import numpy as np
 
+from selection import Selection
 from variation import Variation
 
 
 class EvolAlgorithm(AbstractAlgorithm):
-    def __init__(self, benchmark, popul_size=1000, offspring_size_multiplier=2, k=3, mutation_rate=0.05):
+    def __init__(self, benchmark, popul_size=1000, offspring_size_multiplier=2, k=3, mutation_rate=0.05,
+                 migrate_after_epochs=25):
         self.benchmark = benchmark
 
         self.popul_size = popul_size
@@ -19,6 +21,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         self.k = k  # Tournament selection
         self.mutation_rate = mutation_rate
         self.keep_running_until_timeup = True
+        self.migrate_after_epochs = migrate_after_epochs
 
         super().__init__()
 
@@ -28,123 +31,31 @@ class EvolAlgorithm(AbstractAlgorithm):
         # f = self.benchmark.compute_fitness
         # since zero is implicit, we need to the edge from 0 to first node
         f = lambda population: self.benchmark.compute_fitness(population) + self.benchmark.matrix[0, population[:, 0]]
-
         maximize = self.benchmark.maximise
-
         keep_running_until_timeup = keep_running_until_timeup
         score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.benchmark)
 
-        # Initialize population
-        population = self.initialize_population(self.popul_size, n)
+        selection = lambda population, fitnesses: (
+            Selection.selection(population, self.k, self.offspring_size, fitnesses))
+        elimination = lambda popul, fitnesses: Selection.elimination(popul, fitnesses, self.k, self.popul_size)
+        mutation = lambda offspring: Variation.mutation(offspring, self.mutation_rate)
+
+        islands = [Island(idx, f, self.popul_size, n) for idx in range(5)]
+
         ctr = 0
         while True:
+            best_fitness, mean_fitness, best_sigma = 0, 0, np.array([0, 0])
 
-            fitnesses_not_scaled = f(population)  # before fitness sharing
-
-            # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
-            fitnesses = Diversity.fitness_sharing(fitnesses_not_scaled, population)
-
-            # Update scores
-            best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
-                fitnesses_not_scaled, population, ctr,
-                fitnesses_shared=fitnesses,
-                pdf=None, print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
-                avg_dist_func=lambda: Diversity.avg_dist_func(population)  # only applicable to Evol, not PlackettLuce
-            )
-
-            # Selection
-            selected = self.selection(population, self.k, self.offspring_size, fitnesses)
-
-            # Variation
-            offspring = Variation.crossover(selected)
-            Variation.mutation(offspring, self.mutation_rate)  # overwrites the offspring
-            joined_popul = np.vstack((offspring, population))
-
-            # Evaluation / elimination
-            fitnesses = f(joined_popul)
-            population = self.elimination(joined_popul, fitnesses)
-
-            # shuffle population
-            np.random.shuffle(population)
-
-            # sanity check
-            # for i in range(len(population)):
-            #     assert len(population[i]) == len(set(population[i])) == n - 1
+            for idx, island in enumerate(islands):
+                # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
+                best_fitness, mean_fitness, best_sigma = island.step(
+                    selection, elimination, mutation, score_tracker, ctr)
 
             ctr += 1
-            if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):
+            if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, best_sigma):
                 break
 
         return score_tracker.all_time_best_fitness
-
-    def initialize_population(self, population_size, num_cities):
-        # returns `population_size` number of permutations of `num_cities` cities
-
-        # if would also like to include 0, then do:
-        # population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
-
-        # add 0 to the start of each individual (implicit starting point)
-        # values between 1 and num_cities
-        population = np.array([np.random.permutation(num_cities - 1) + 1 for _ in range(population_size)])
-
-        # Our representation (adjacency representation):
-        # eg: 0 1 2 3 4
-        #     | | | | |
-        #     v v v v v
-        #    [2,3,4,0,1]
-        # so order of which city to visit is 2,3,4,0,1
-
-        # We didn't cycle-representation because not easy to ensure that starts and stops at 0
-
-        return population
-
-    def selection(self, population, k, nb_individuals_to_select, fitness_scores, allow_duplicates=True):
-        if allow_duplicates:
-            return self.selection_with_duplicates(population, k, nb_individuals_to_select, fitness_scores)
-        else:
-            return self.selection_without_duplicates(population, k, nb_individuals_to_select, fitness_scores)
-
-    def selection_without_duplicates(self, population, k, nb_individuals_to_select, fitness_scores):
-        popul_size = np.size(population, 0)
-        assert nb_individuals_to_select <= popul_size - k + 1
-
-        # deleted_individuals = np.bool_(np.zeros(len(population)))  # default: false
-        deleted_individuals = np.zeros(len(population), dtype=bool)  # default: false
-        nb_cities = np.size(population, 1)
-        selected = np.zeros((nb_individuals_to_select, nb_cities), dtype=int)
-        for ii in range(nb_individuals_to_select):
-            # indices of random individuals
-            plausible_indices = np.where(deleted_individuals == False)
-            plausible_indices = plausible_indices[0]  # tuple i assume
-            ri = np.random.choice(plausible_indices, k, replace=False)
-
-            min = np.argmin(fitness_scores[ri])
-            best_indiv_idx = ri[min]
-            selected[ii, :] = population[best_indiv_idx, :]
-            deleted_individuals[best_indiv_idx] = True
-
-        return selected
-
-    def selection_with_duplicates(self, population, k, nb_individuals_to_select, fitness_scores):
-        nb_cities = np.size(population, 1)
-        popul_size = np.size(population, 0)
-        selected = np.zeros((nb_individuals_to_select, nb_cities), dtype=int)
-        for ii in range(nb_individuals_to_select):
-            # indices of random individuals
-            # random.choices to prevent comparing 2 identical individuals
-            # ri = random.choices(range(popul_size), k=k)
-            ri = np.random.choice(range(popul_size), k, replace=True)
-            min = np.argmin(fitness_scores[ri])  # take the single best
-            best_indiv_idx = ri[min]
-            selected[ii, :] = population[best_indiv_idx, :]
-        return selected  # this may contain duplicates
-
-    def elimination(self, joinedPopulation, fitness_scores):
-        # Not age based because loses potentially good individuals
-        # just do selection again
-        # In this case, sample without replacement. (selection was with replacement, so allowed duplicates)
-        return self.selection(joinedPopulation, self.k, self.popul_size, fitness_scores, allow_duplicates=False)
-
 
 
 if __name__ == "__main__":
@@ -156,7 +67,7 @@ if __name__ == "__main__":
     print("*" * 20)
     parent = np.array([2, 1, 3])  # 0, 2, 1, 3 but 0 is implicit
     e = EvolAlgorithm(None)
-    parent_cyclic = e.edge_table(parent, n)  # 2 3 1 0
+    parent_cyclic = Variation.edge_table(parent, n)  # 2 3 1 0
     print(parent)
     print(parent_cyclic)
 
@@ -172,14 +83,14 @@ if __name__ == "__main__":
     # selected = np.array(([1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8]), dtype=int)
     selected = np.array(([1, 2], [1, 2]), dtype=int)
     print(selected)
-    offspring = e.crossover(selected)
+    offspring = Variation.crossover(selected)
     print(offspring)
 
     print("*" * 20)
     print("Testing distance")
 
-    print(e.distance(np.array([1, 2, 3, 4]), np.array([1, 2, 3, 4])))
-    print(e.distance(np.array([1, 2, 3, 4]), np.array([1, 2, 4, 3])))
+    print(FitnessSharing.distance(np.array([1, 2, 3, 4]), np.array([1, 2, 3, 4])))
+    print(FitnessSharing.distance(np.array([1, 2, 3, 4]), np.array([1, 2, 4, 3])))
 
     print("*" * 20)
     print("Testing fitness sharing")

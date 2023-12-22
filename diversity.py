@@ -3,7 +3,76 @@ import numpy as np
 from variation import Variation
 
 
-class Diversity:
+class Island:
+    def __init__(self, identifier, f, popul_size, n):
+        self.identifier = identifier
+        self.f = f
+        self.popul_size = popul_size
+        self.population = Island.initialize_population(self.popul_size, n)
+
+    @staticmethod
+    def initialize_population(population_size, num_cities):
+        # returns `population_size` number of permutations of `num_cities` cities
+
+        # if would also like to include 0, then do:
+        # population = np.array([np.random.permutation(num_cities) for _ in range(population_size)])
+
+        # add 0 to the start of each individual (implicit starting point)
+        # values between 1 and num_cities
+        population = np.array([np.random.permutation(num_cities - 1) + 1 for _ in range(population_size)])
+
+        # Our representation (adjacency representation):
+        # eg: 0 1 2 3 4
+        #     | | | | |
+        #     v v v v v
+        #    [2,3,4,0,1]
+        # so order of which city to visit is 2,3,4,0,1
+
+        # We didn't cycle-representation because not easy to ensure that starts and stops at 0
+
+        return population
+
+    def step(self, selection, elimination, mutation, score_tracker, ctr):
+        fitnesses_not_scaled = self.f(self.population)  # before fitness sharing
+
+        # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
+        fitnesses = FitnessSharing.fitness_sharing(fitnesses_not_scaled, self.population)
+
+        # Update scores
+        best_fitness, mean_fitness, best_sigma = score_tracker.update_scores(
+            fitnesses_not_scaled, self.population, ctr,
+            fitnesses_shared=fitnesses,
+            pdf=None, print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
+            avg_dist_func=lambda: FitnessSharing.avg_dist_func(self.population)  # only applicable to Evol, not PlackettLuce
+        )
+
+        # Selection
+        # selected = self.selection(population, self.k, self.offspring_size, fitnesses)
+        selected = selection(self.population, fitnesses)
+
+        # Variation
+        offspring = Variation.crossover(selected)
+        # Variation.mutation(offspring, self.mutation_rate)  # overwrites the offspring
+        mutation(offspring)
+
+        joined_popul = np.vstack((offspring, self.population))
+
+        # Evaluation / elimination
+        fitnesses = self.f(joined_popul)
+        self.population = elimination(joined_popul, fitnesses)
+
+        # shuffle popul in place, required because other functions such
+        # diversity.fitness_sharing uses the first 10% of the population assuming it is random
+        np.random.shuffle(self.population)
+
+        # sanity check
+        # for i in range(len(population)):
+        #     assert len(population[i]) == len(set(population[i])) == n - 1
+
+        return best_fitness, mean_fitness, best_sigma
+
+
+class FitnessSharing:
     @staticmethod
     def distance(individual1, individual2):
         # individual1 and individual2 are in adjacency representation
@@ -40,8 +109,8 @@ class Diversity:
         # A single individual must be compared to all individuals in the subpopulation
 
         sharing_vals = [
-            Diversity.sharing_function(
-                Diversity.distance(population[i], subpopulation[j]) if not (i == j) else 0,
+            FitnessSharing.sharing_function(
+                FitnessSharing.distance(population[i], subpopulation[j]) if not (i == j) else 0,
                 # if i == j then distance is 0
                 max_distance=n)
             for j in range(sub_popul_size)]
@@ -83,7 +152,7 @@ class Diversity:
         indices_steekproef = np.arange(popul_size - sub_popul_size,
                                        popul_size)  # of these the shared_fitness is actually computed
         fitnesses_shared_and_sum[indices_steekproef, :] = np.array(
-            [Diversity.get_single_fitness_shared(
+            [FitnessSharing.get_single_fitness_shared(
                 fitnesses_org[i],
                 population,
                 subpopulation,
@@ -122,9 +191,9 @@ class Diversity:
             sharing_vals = np.zeros(sub_popul_size, dtype=np.float64)
 
             for j in range(sub_popul_size):
-                dist = Diversity.distance(population[i], subpopulation[j])
+                dist = FitnessSharing.distance(population[i], subpopulation[j])
 
-                sharing_val = Diversity.sharing_function(dist, max_distance=n)
+                sharing_val = FitnessSharing.sharing_function(dist, max_distance=n)
                 sharing_vals[j] += sharing_val
 
             sum = np.sum(sharing_vals)  # dependent on the subpopulation sizedfsafds
@@ -168,5 +237,5 @@ class Diversity:
         Approximation of the average distance between individuals in the population
         """
         average_distance = np.mean(
-            [Diversity.distance(population[i], population[i + 1]) for i in range(len(population) - 1)])
+            [FitnessSharing.distance(population[i], population[i + 1]) for i in range(len(population) - 1)])
         return average_distance
