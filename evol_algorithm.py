@@ -32,20 +32,22 @@ class EvolAlgorithm(AbstractAlgorithm):
         ctr = 0
         while True:
 
-            fitnesses = f(population)
+            fitnesses_not_scaled = f(population) # before fitness sharing
 
+            # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
+            fitnesses = self.fitness_sharing(fitnesses_not_scaled, population)
+
+            # Update scores
             best_fitness, mean_fitness, sigma_best = score_tracker.update_scores(
-                fitnesses, population, ctr, pdf=None,
-                print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
+                fitnesses_not_scaled, population, ctr,
+                fitnesses_shared=fitnesses,
+                pdf=None, print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
                 avg_dist_func=lambda: self.avg_dist_func(population)  # only applicable to Evol, not PlackettLuce
             )
 
-            # Fitness sharing
-            # fitnesses_ = self.fitness_sharing(fitnesses, population)
-
-            # if ctr % 10 == 0:
-            #     print("fitnesses:", np.mean(fitnesses))
-            #     print("fitnesses_:", np.mean(fitnesses_))
+            # print(np.mean(fitnesses_not_scaled))
+            # print(np.mean(fitnesses))
+            # best_fitness, mean_fitness, sigma_best = 0, 0, np.array([0, 0])
 
             # Selection
             selected = self.selection(population, self.k, self.offspring_size, fitnesses)
@@ -379,7 +381,7 @@ class EvolAlgorithm(AbstractAlgorithm):
 
     def sharing_function(self, d, max_distance):
         # sigma_share is based on the maximum distance between any two individuals in the population, which is n
-        sigma_share = max_distance * 0.8
+        sigma_share = max_distance * 0.2
         alpha = 1
         if d <= sigma_share:
             return 1 - (d / sigma_share) ** alpha
