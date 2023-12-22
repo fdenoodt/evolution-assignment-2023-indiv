@@ -21,7 +21,11 @@ class EvolAlgorithm(AbstractAlgorithm):
 
     def optimize(self, numIters, keep_running_until_timeup, reporter_name, *args):
         n = self.benchmark.permutation_size()
-        f = self.benchmark.compute_fitness
+
+        # f = self.benchmark.compute_fitness
+        # since zero is implicit, we need to the edge from 0 to first node
+        f = lambda population: self.benchmark.compute_fitness(population) + self.benchmark.matrix[0, population[:, 0]]
+
         maximize = self.benchmark.maximise
 
         keep_running_until_timeup = keep_running_until_timeup
@@ -68,6 +72,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             if score_tracker.utility.is_done_and_report(ctr, mean_fitness, best_fitness, sigma_best):
                 break
 
+
         return score_tracker.all_time_best_fitness
 
     def initialize_population(self, population_size, num_cities):
@@ -101,9 +106,10 @@ class EvolAlgorithm(AbstractAlgorithm):
         popul_size = np.size(population, 0)
         assert nb_individuals_to_select <= popul_size - k + 1
 
-        deleted_individuals = np.bool_(np.zeros(len(population)))  # default: false
+        # deleted_individuals = np.bool_(np.zeros(len(population)))  # default: false
+        deleted_individuals = np.zeros(len(population), dtype=bool)  # default: false
         nb_cities = np.size(population, 1)
-        selected = np.zeros((nb_individuals_to_select, nb_cities))
+        selected = np.zeros((nb_individuals_to_select, nb_cities), dtype=int)
         for ii in range(nb_individuals_to_select):
             # indices of random individuals
             plausible_indices = np.where(deleted_individuals == False)
