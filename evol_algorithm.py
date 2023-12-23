@@ -28,7 +28,6 @@ class EvolAlgorithm(AbstractAlgorithm):
     def optimize(self, numIters, keep_running_until_timeup, reporter_name, *args):
         n = self.benchmark.permutation_size()
 
-        # f = self.benchmark.compute_fitness
         # since zero is implicit, we need to the edge from 0 to first node
         f = lambda population: self.benchmark.compute_fitness(population) + self.benchmark.matrix[0, population[:, 0]]
         maximize = self.benchmark.maximise
@@ -48,16 +47,9 @@ class EvolAlgorithm(AbstractAlgorithm):
         while not (done):
             # run for a few epochs
             # Time to run for a few epochs
-            import time
-            start = time.time()
-            # ctr, best_fitness, mean_fitness, best_sigma = \
             done = Island.run_epochs(self.migrate_after_epochs, islands,
                                      selection, elimination, mutation, crossover,
                                      score_tracker, ctr)
-            end = time.time()
-            print("")
-            print("Time to run for a few epochs:", end - start)
-            print()
 
             # migrate
             Island.migrate(islands, self.popul_size)

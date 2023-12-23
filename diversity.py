@@ -6,16 +6,6 @@ from utility import Utility
 from variation import Variation
 
 
-# import asyncio
-
-
-# def background(f):
-#     def wrapped(*args, **kwargs):
-#         return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
-#
-#     return wrapped
-
-
 class Island:
     def __init__(self, identifier, f, popul_size, n):
         self.identifier = identifier
@@ -47,15 +37,8 @@ class Island:
 
     @staticmethod
     def run_epochs(nb_epochs, islands, selection, elimination, mutation, crossover, score_tracker, ctr):
-        best_sigma, last_fitnesses_shared = None, []
-
         done = False
         nb_islands = len(islands)
-
-        # for idx, island in enumerate(islands):
-        #     done = (island._run_epoch(
-        #         done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
-        #         nb_islands))
 
         results = [island._run_epoch(
             done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
@@ -64,23 +47,10 @@ class Island:
 
         done = results[-1]
 
-        # loop = asyncio.get_event_loop()  # Have a new event loop
-        # looper = asyncio.gather(*[
-        #     island._run_epoch(
-        #         done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
-        #         nb_islands)
-        #     for idx, island in enumerate(islands)
-        # ])  # Run the loop
-        # results = loop.run_until_complete(looper)  # Wait until finish
-        # done = results[-1]
-        # print()
-
         return done
 
-    # @background
     def _run_epoch(self, done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
                    nb_islands):
-        best_sigma, last_fitnesses_shared = None, []
 
         # contains all fitnesses of a single island (for all epochs)
         best_fitnesses = np.zeros(nb_epochs, dtype=np.float64)
@@ -103,7 +73,7 @@ class Island:
                     done = True
                     break
 
-        return done  # , best_fitnesses, mean_fitnesses, best_sigma, last_fitnesses_shared
+        return done
 
     def step(self, selection, elimination, mutation, crossover, score_tracker, ctr):
         fitnesses_not_scaled = self.f(self.population)  # before fitness sharing
@@ -159,18 +129,9 @@ class Island:
         our_migrants = self.population[:nb_migrants].copy()  # take first nb_migrants, already shuffled
         self.population[:nb_migrants] = other_island_migrants
 
-        # np.random.shuffle(self.population)
+        np.random.shuffle(self.population)
 
         return our_migrants
-
-        # Function Entirely generated via Copilot
-
-        # migrate 10% of the population
-        # nb_migrants = int(self.popul_size * 0.1)
-        # indices_migrants = np.random.choice(self.popul_size, nb_migrants, replace=False)
-        #
-        # # migrate the selected individuals
-        # self.population[indices_migrants] = other_island.population[indices_migrants]
 
 
 class FitnessSharing:
