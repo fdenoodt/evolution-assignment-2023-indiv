@@ -6,6 +6,16 @@ from utility import Utility
 from variation import Variation
 
 
+# import asyncio
+
+
+# def background(f):
+#     def wrapped(*args, **kwargs):
+#         return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
+#
+#     return wrapped
+
+
 class Island:
     def __init__(self, identifier, f, popul_size, n):
         self.identifier = identifier
@@ -41,15 +51,33 @@ class Island:
 
         done = False
         nb_islands = len(islands)
-        for idx, island in enumerate(islands):
-            done, best_fitnesses, mean_fitnesses, best_sigma, last_fitnesses_shared = island._run_epoch(
-                done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
-                nb_islands)
 
-        print()
+        # for idx, island in enumerate(islands):
+        #     done = (island._run_epoch(
+        #         done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
+        #         nb_islands))
+
+        results = [island._run_epoch(
+            done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
+            nb_islands)
+            for idx, island in enumerate(islands)]
+
+        done = results[-1]
+
+        # loop = asyncio.get_event_loop()  # Have a new event loop
+        # looper = asyncio.gather(*[
+        #     island._run_epoch(
+        #         done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
+        #         nb_islands)
+        #     for idx, island in enumerate(islands)
+        # ])  # Run the loop
+        # results = loop.run_until_complete(looper)  # Wait until finish
+        # done = results[-1]
+        # print()
 
         return done
 
+    # @background
     def _run_epoch(self, done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
                    nb_islands):
         best_sigma, last_fitnesses_shared = None, []
@@ -75,7 +103,7 @@ class Island:
                     done = True
                     break
 
-        return done, best_fitnesses, mean_fitnesses, best_sigma, last_fitnesses_shared
+        return done  # , best_fitnesses, mean_fitnesses, best_sigma, last_fitnesses_shared
 
     def step(self, selection, elimination, mutation, crossover, score_tracker, ctr):
         fitnesses_not_scaled = self.f(self.population)  # before fitness sharing
@@ -337,6 +365,11 @@ if __name__ == "__main__":
     popul_size = 100
     islands = [Island(i, lambda x: np.random.rand(len(x)), popul_size, n) for i in range(5)]
     print("Before run_epochs")
+
+    import time
+
+    time1 = time.time()
+
     Island.run_epochs(5, islands,
                       selection=lambda population, fitnesses: population,
                       elimination=lambda population, fitnesses: population,
@@ -346,3 +379,9 @@ if __name__ == "__main__":
                                                  reporter_name="test",
                                                  benchmark=benchmark),
                       ctr=0)
+
+    time2 = time.time()
+
+    print("Time to run_epochs:", time2 - time1)
+
+# TODO: think about why the best_fitness is signficantly lower here than when running main.py
