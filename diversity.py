@@ -76,8 +76,6 @@ class Island:
                 done = True
                 break
 
-
-
         return done
 
     def step(self, selection, elimination, mutation, crossover, score_tracker, ctr):
@@ -122,9 +120,11 @@ class Island:
 
     @staticmethod
     def migrate(islands, popul_size, percentage=0.1):
+        if len(islands) == 1:
+            return
+
         print("Migrating...")
         # 10% of the population migrates to the next island
-        assert len(islands) > 1
         migrants = islands[-1].population[:int(popul_size * percentage)]
         for idx, island in enumerate(islands):
             migrants = island._migrate(migrants)

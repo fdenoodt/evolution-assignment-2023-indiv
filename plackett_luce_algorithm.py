@@ -5,6 +5,8 @@ from placket_luce import PlackettLuce
 
 class PlackettLuceAlgorithm(AbstractAlgorithm):
     def __init__(self, lr, nb_samples_lambda, U, benchmark, pdf):
+        assert not (benchmark.normalizing_constant == 1), \
+            "Normalizing for PlackettLuceAlgorithm is required to prevent overflow, so it should be enabled"
 
         self.lr = lr
         self.nb_samples_lambda = nb_samples_lambda

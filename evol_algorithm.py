@@ -13,8 +13,10 @@ from variation import Variation
 
 class EvolAlgorithm(AbstractAlgorithm):
     def __init__(self, benchmark, popul_size=1000, offspring_size_multiplier=2, k=3, mutation_rate=0.05,
-                 migrate_after_epochs=25, keep_running_until_timeup=True):
+                 migrate_after_epochs=25, nb_islands=5, migration_percentage=0.1, keep_running_until_timeup=True):
         self.benchmark = benchmark
+        assert (benchmark.normalizing_constant == 1), \
+            "Normalizing for EvolAlgorithm gives no benefits and should be disabled"
 
         self.popul_size = popul_size
         self.offspring_size = offspring_size_multiplier * popul_size
@@ -22,6 +24,8 @@ class EvolAlgorithm(AbstractAlgorithm):
         self.mutation_rate = mutation_rate
         self.keep_running_until_timeup = keep_running_until_timeup
         self.migrate_after_epochs = migrate_after_epochs
+        self.nb_islands = nb_islands
+        self.migration_percentage = migration_percentage
 
         super().__init__()
 
@@ -40,7 +44,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         mutation = lambda offspring: Variation.mutation(offspring, self.mutation_rate)
         crossover = lambda selected: Variation.crossover(selected)
 
-        islands = [Island(idx, f, self.popul_size, n) for idx in range(5)]
+        islands = [Island(idx, f, self.popul_size, n) for idx in range(self.nb_islands)]
 
         ctr = 0
         done = False
@@ -52,7 +56,7 @@ class EvolAlgorithm(AbstractAlgorithm):
                                      score_tracker, ctr)
 
             # migrate
-            Island.migrate(islands, self.popul_size)
+            Island.migrate(islands, self.popul_size, percentage=self.migration_percentage)
 
             ctr += 1
 
