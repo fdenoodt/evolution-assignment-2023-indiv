@@ -12,7 +12,8 @@ class ScoreTracker:
         self.utility = Utility(reporter, keep_running_until_timeup, numIters)
         self.benchmark = benchmark
 
-    def update_scores(self, fitnesses, sigmas, ctr, fitnesses_shared=None, pdf=None, print_w=False, avg_dist_func=None):
+    def update_scores(self, fitnesses, sigmas, ctr, fitnesses_shared=None, pdf=None, print_w=False, avg_dist_func=None,
+                      island_identifier=None, print_score=True):
 
         fitnesses = self.benchmark.unnormalize_fitnesses(fitnesses)
         if fitnesses_shared is not None:
@@ -35,6 +36,8 @@ class ScoreTracker:
                 self.all_time_sigma_best = sigma_best
 
         if print_w and pdf is not None:
+            assert island_identifier is None
+
             w = np.exp(pdf.w_log)
             frequency = 100
             if len(w.shape) == 2:  # if w_log is square matrix:
@@ -46,5 +49,7 @@ class ScoreTracker:
 
         avg_fitness = np.mean(fitnesses)
 
-        self.utility.print_score(ctr, best_fitness, avg_fitness, 10, avg_dist_func, fitnesses_shared)
+        if print_score:
+            Utility.print_score(ctr, best_fitness, avg_fitness, 10, avg_dist_func, fitnesses_shared,
+                                     island_identifier)
         return best_fitness, avg_fitness, sigma_best

@@ -1,5 +1,6 @@
 import numpy as np
 
+from utility import Utility
 from variation import Variation
 
 
@@ -34,17 +35,34 @@ class Island:
 
     @staticmethod
     def run_epochs(nb_epochs, islands, selection, elimination, mutation, score_tracker, ctr):
-        best_fitness, mean_fitness, best_sigma = None, None, None
+        best_sigma, last_fitnesses_shared = None, []
 
-        for epoch in range(nb_epochs):
-            for idx, island in enumerate(islands):
+        # contains all fitnesses of a single island (for all epochs)
+        best_fitnesses = np.zeros(nb_epochs, dtype=np.float64)
+        mean_fitnesses = np.zeros(nb_epochs, dtype=np.float64)
+
+        done = False
+        nb_islands = len(islands)
+        for idx, island in enumerate(islands):
+            for epoch in range(nb_epochs):
                 # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
-                best_fitness, mean_fitness, best_sigma = island.step(
-                    selection, elimination, mutation, score_tracker, ctr)
+                best_fitnesses[epoch], mean_fitnesses[epoch], best_sigma, last_fitnesses_shared = island.step(
+                    selection, elimination, mutation, score_tracker, epoch + ctr)
 
-            ctr += 1
+                if epoch == nb_epochs - 1:  # only print results for last epoch of each island
+                    Utility.print_score(epoch + ctr, best_fitnesses[epoch], np.mean(mean_fitnesses), 1,
+                                        avg_dist_func=lambda: FitnessSharing.avg_dist_func(island.population),
+                                        fitnesses_shared=np.mean(last_fitnesses_shared),
+                                        island_identifier=island.identifier)
 
-        return ctr, best_fitness, mean_fitness, best_sigma
+                if idx == nb_islands - 1:  # only store results for last island
+                    if score_tracker.utility.is_done_and_report(
+                            ctr + epoch, mean_fitnesses[epoch], best_fitnesses[epoch], best_sigma):
+                        done = True
+                        break
+        print()
+
+        return done
 
     def step(self, selection, elimination, mutation, score_tracker, ctr):
         fitnesses_not_scaled = self.f(self.population)  # before fitness sharing
@@ -57,17 +75,17 @@ class Island:
             fitnesses_not_scaled, self.population, ctr,
             fitnesses_shared=fitnesses,
             pdf=None, print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
-            avg_dist_func=lambda: FitnessSharing.avg_dist_func(self.population)
             # only applicable to Evol, not PlackettLuce
+            avg_dist_func=lambda: FitnessSharing.avg_dist_func(self.population),
+            island_identifier=self.identifier,
+            print_score=False
         )
 
         # Selection
-        # selected = self.selection(population, self.k, self.offspring_size, fitnesses)
         selected = selection(self.population, fitnesses)
 
         # Variation
         offspring = Variation.crossover(selected)
-        # Variation.mutation(offspring, self.mutation_rate)  # overwrites the offspring
         mutation(offspring)
 
         joined_popul = np.vstack((offspring, self.population))
@@ -77,17 +95,18 @@ class Island:
         self.population = elimination(joined_popul, fitnesses)
 
         # shuffle popul in place, required because other functions such
-        # diversity.fitness_sharing uses the first 10% of the population assuming it is random
+        # Diversity.fitness_sharing uses the first 10% of the population assuming it is random
         np.random.shuffle(self.population)
 
         # sanity check
         # for i in range(len(population)):
         #     assert len(population[i]) == len(set(population[i])) == n - 1
 
-        return best_fitness, mean_fitness, best_sigma
+        return best_fitness, mean_fitness, best_sigma, fitnesses
 
     @staticmethod
     def migrate(islands, popul_size, percentage=0.1):
+        print("Migrating...")
         # 10% of the population migrates to the next island
         assert len(islands) > 1
         migrants = islands[-1].population[:int(popul_size * percentage)]

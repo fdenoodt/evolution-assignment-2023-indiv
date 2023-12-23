@@ -43,19 +43,25 @@ class EvolAlgorithm(AbstractAlgorithm):
         islands = [Island(idx, f, self.popul_size, n) for idx in range(5)]
 
         ctr = 0
-        while True:
+        done = False
+        while not (done):
             # run for a few epochs
-            ctr, best_fitness, mean_fitness, best_sigma = \
-                Island.run_epochs(self.migrate_after_epochs, islands,
-                                  selection, elimination, mutation,
-                                  score_tracker, ctr)
+            # Time to run for a few epochs
+            import time
+            start = time.time()
+            # ctr, best_fitness, mean_fitness, best_sigma = \
+            done = Island.run_epochs(self.migrate_after_epochs, islands,
+                                     selection, elimination, mutation,
+                                     score_tracker, ctr)
+            end = time.time()
+            print("")
+            print("Time to run for a few epochs:", end - start)
+            print()
 
             # migrate
             Island.migrate(islands, self.popul_size)
 
-            if score_tracker.utility.is_done_and_report(
-                    ctr, mean_fitness, best_fitness, best_sigma):
-                break
+            ctr += 1
 
         return score_tracker.all_time_best_fitness
 

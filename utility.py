@@ -8,18 +8,19 @@ class Utility:
         self.keep_running_until_timeup = keep_running_until_timeup
         self.numIters = numIters
 
-    def print_score(self, ctr, best_fitness, avg_fitness, frequency=10, avg_dist_func=None, fitnesses_shared=None):
+    @staticmethod
+    def print_score(ctr, best_fitness, avg_fitness, frequency=10, avg_dist_func=None, fitnesses_shared=None,
+                    island_identifier=None):
         # avg_dist_func can only be used if fitnesses_shared is not None
         assert (avg_dist_func is None) or (fitnesses_shared is not None)
 
         if ctr % frequency == 0:
-            # print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
-
             if callable(avg_dist_func):
+                assert island_identifier is not None
                 average_distance = avg_dist_func()
                 avg_fitness_shared = np.mean(fitnesses_shared)
                 print(
-                    f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}, fit shared: {avg_fitness_shared:_.4f}, avg dist: {average_distance:_.4f}")
+                    f"Isl: {island_identifier}, iter: {ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}, fit shared: {avg_fitness_shared:_.4f}, avg dist: {average_distance:_.4f}")
             else:
                 print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
 
