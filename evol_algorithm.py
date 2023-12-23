@@ -39,6 +39,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             Selection.selection(population, self.k, self.offspring_size, fitnesses))
         elimination = lambda popul, fitnesses: Selection.elimination(popul, fitnesses, self.k, self.popul_size)
         mutation = lambda offspring: Variation.mutation(offspring, self.mutation_rate)
+        crossover = lambda selected: Variation.crossover(selected)
 
         islands = [Island(idx, f, self.popul_size, n) for idx in range(5)]
 
@@ -51,7 +52,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             start = time.time()
             # ctr, best_fitness, mean_fitness, best_sigma = \
             done = Island.run_epochs(self.migrate_after_epochs, islands,
-                                     selection, elimination, mutation,
+                                     selection, elimination, mutation, crossover,
                                      score_tracker, ctr)
             end = time.time()
             print("")

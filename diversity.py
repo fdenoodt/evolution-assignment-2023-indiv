@@ -1,5 +1,7 @@
 import numpy as np
 
+from ScoreTracker import ScoreTracker
+from benchmark_tsp import Benchmark
 from utility import Utility
 from variation import Variation
 
@@ -34,20 +36,21 @@ class Island:
         return population
 
     @staticmethod
-    def run_epochs(nb_epochs, islands, selection, elimination, mutation, score_tracker, ctr):
+    def run_epochs(nb_epochs, islands, selection, elimination, mutation, crossover, score_tracker, ctr):
         best_sigma, last_fitnesses_shared = None, []
 
         done = False
         nb_islands = len(islands)
         for idx, island in enumerate(islands):
             done, best_fitnesses, mean_fitnesses, best_sigma, last_fitnesses_shared = island._run_epoch(
-                done, nb_epochs, idx, island, selection, elimination, mutation, score_tracker, ctr, nb_islands)
+                done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
+                nb_islands)
 
         print()
 
         return done
 
-    def _run_epoch(self, done, nb_epochs, idx, island, selection, elimination, mutation, score_tracker, ctr,
+    def _run_epoch(self, done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
                    nb_islands):
         best_sigma, last_fitnesses_shared = None, []
 
@@ -58,7 +61,7 @@ class Island:
         for epoch in range(nb_epochs):
             # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
             best_fitnesses[epoch], mean_fitnesses[epoch], best_sigma, last_fitnesses_shared = island.step(
-                selection, elimination, mutation, score_tracker, epoch + ctr)
+                selection, elimination, mutation, crossover, score_tracker, epoch + ctr)
 
             if epoch == nb_epochs - 1:  # only print results for last epoch of each island
                 Utility.print_score((ctr * nb_epochs) + epoch, best_fitnesses[epoch], np.mean(mean_fitnesses), 1,
@@ -74,7 +77,7 @@ class Island:
 
         return done, best_fitnesses, mean_fitnesses, best_sigma, last_fitnesses_shared
 
-    def step(self, selection, elimination, mutation, score_tracker, ctr):
+    def step(self, selection, elimination, mutation, crossover, score_tracker, ctr):
         fitnesses_not_scaled = self.f(self.population)  # before fitness sharing
 
         # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
@@ -95,7 +98,7 @@ class Island:
         selected = selection(self.population, fitnesses)
 
         # Variation
-        offspring = Variation.crossover(selected)
+        offspring = crossover(selected)
         mutation(offspring)
 
         joined_popul = np.vstack((offspring, self.population))
@@ -326,3 +329,20 @@ if __name__ == "__main__":
     print(islands[0].population)
     print(islands[1].population)
     print(islands[2].population)
+
+    print("*" * 20)
+    print("Test run_epochs")
+    benchmark = Benchmark("./tour750.csv", normalize=True, maximise=False)
+    n = benchmark.permutation_size()
+    popul_size = 100
+    islands = [Island(i, lambda x: np.random.rand(len(x)), popul_size, n) for i in range(5)]
+    print("Before run_epochs")
+    Island.run_epochs(5, islands,
+                      selection=lambda population, fitnesses: population,
+                      elimination=lambda population, fitnesses: population,
+                      mutation=lambda offspring: offspring,
+                      crossover=lambda selected: selected,
+                      score_tracker=ScoreTracker(n, maximize=False, keep_running_until_timeup=False, numIters=1,
+                                                 reporter_name="test",
+                                                 benchmark=benchmark),
+                      ctr=0)
