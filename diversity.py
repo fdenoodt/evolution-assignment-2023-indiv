@@ -37,10 +37,6 @@ class Island:
     def run_epochs(nb_epochs, islands, selection, elimination, mutation, score_tracker, ctr):
         best_sigma, last_fitnesses_shared = None, []
 
-        # contains all fitnesses of a single island (for all epochs)
-        best_fitnesses = np.zeros(nb_epochs, dtype=np.float64)
-        mean_fitnesses = np.zeros(nb_epochs, dtype=np.float64)
-
         done = False
         nb_islands = len(islands)
         for idx, island in enumerate(islands):
