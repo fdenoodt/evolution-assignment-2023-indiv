@@ -36,18 +36,19 @@ class Island:
         return population
 
     @staticmethod
-    def run_epochs(nb_epochs, islands, selection, elimination, mutation, crossover, score_tracker, ctr):
+    def run_epochs(nb_epochs, islands, selection, elimination, mutation, crossover, fitness_sharing,
+                   score_tracker, ctr):
         done = np.zeros(len(islands), dtype=bool)  # done for each island
 
         done = [island._run_epoch(done[idx], nb_epochs, idx, island, selection, elimination, mutation, crossover,
-                                  score_tracker, ctr)
+                                  fitness_sharing, score_tracker, ctr)
                 for idx, island in enumerate(islands)]
 
         # shouldn't happen that one island is done and another is not
         return np.any(done)
 
     def _run_epoch(self, done, nb_epochs, island_idx, island, selection, elimination, mutation, crossover,
-                   score_tracker, ctr):
+                   fitness_sharing, score_tracker, ctr):
 
         # _run_epoch is called for epoch amount of times, could be that time was already over in previous epoch
         # so don't run epoch if time is already over
@@ -61,7 +62,7 @@ class Island:
         for epoch in range(nb_epochs):
             # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
             best_fitnesses[epoch], mean_fitnesses[epoch], best_sigma, last_fitnesses_shared = island.step(
-                selection, elimination, mutation, crossover, score_tracker, epoch + ctr)
+                selection, elimination, mutation, crossover, fitness_sharing, score_tracker, epoch + ctr)
 
             if epoch == nb_epochs - 1:  # only print results for last epoch of each island
                 Utility.print_score((ctr * nb_epochs) + epoch, best_fitnesses[epoch], np.mean(mean_fitnesses), 1,
@@ -78,16 +79,16 @@ class Island:
 
         return done
 
-    def step(self, selection, elimination, mutation, crossover, score_tracker, ctr):
-        fitnesses_not_scaled = self.f(self.population)  # before fitness sharing
+    def step(self, selection, elimination, mutation, crossover, fitness_sharing, score_tracker, ctr):
+        fitnesses = self.f(self.population)  # before fitness sharing
 
         # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
-        fitnesses = FitnessSharing.fitness_sharing(fitnesses_not_scaled, self.population)
+        fitnesses_shared = fitness_sharing(fitnesses, self.population)
 
         # Update scores
         best_fitness, mean_fitness, best_sigma = score_tracker.update_scores(
-            fitnesses_not_scaled, self.population, ctr,
-            fitnesses_shared=fitnesses,
+            fitnesses, self.population, ctr,
+            fitnesses_shared=fitnesses_shared,
             pdf=None, print_w=False,  # pdf, w is only applicable to PlackettLuce, not Evol
             # only applicable to Evol, not PlackettLuce
             avg_dist_func=lambda: FitnessSharing.avg_dist_func(self.population),
@@ -96,7 +97,7 @@ class Island:
         )
 
         # Selection
-        selected = selection(self.population, fitnesses)
+        selected = selection(self.population, fitnesses_shared)
 
         # Variation
         offspring = crossover(selected)
@@ -106,7 +107,7 @@ class Island:
 
         # Evaluation / elimination
         fitnesses = self.f(joined_popul)
-        self.population = elimination(joined_popul, fitnesses)
+        self.population = elimination(joined_popul, fitnesses) # elimination is not based on fitness sharing
 
         # shuffle popul in place, required because other functions such
         # Diversity.fitness_sharing uses the first 10% of the population assuming it is random
@@ -116,7 +117,7 @@ class Island:
         # for i in range(len(population)):
         #     assert len(population[i]) == len(set(population[i])) == n - 1
 
-        return best_fitness, mean_fitness, best_sigma, fitnesses
+        return best_fitness, mean_fitness, best_sigma, fitnesses_shared
 
     @staticmethod
     def migrate(islands, popul_size, percentage=0.1):
@@ -172,28 +173,38 @@ class FitnessSharing:
 
     @staticmethod
     def get_single_fitness_shared(org_fitness, population, subpopulation, sub_popul_size, sub_popul_percent, i,
-                                  n):
+                                  n, alpha):
         # A single individual must be compared to all individuals in the subpopulation
 
-        sharing_vals = [
-            FitnessSharing.sharing_function(
-                FitnessSharing.distance(population[i], subpopulation[j]) if not (i == j) else 0,
-                # if i == j then distance is 0
-                max_distance=n)
-            for j in range(sub_popul_size)]
+        # if i == j then distance is 0
+        distances = [FitnessSharing.distance(population[i], subpopulation[j]) if not (i == j) else 0
+                     for j in range(sub_popul_size)]
 
-        sum = np.sum(sharing_vals)  # dependent on the subpopulation sizedfsafds
+        if np.mean(distances) == 0:
+            # print("mean distance is 0, SO IS COPY OF ALL.")
+            a = 5
+
+        sharing_vals = np.array([FitnessSharing.sharing_function(d=distances[j], max_distance=n, alpha=alpha)
+                                 for j in range(sub_popul_size)])
+        sharing_vals = 1 - sharing_vals  # element-wise
+
+        sum_sharing_vals = np.sum(sharing_vals)  # dependent on the subpopulation sizedfsafds
         # So to rescale, we divide by the subpopulation percent
-        sum = sum / sub_popul_percent
+        sum_sharing_vals = sum_sharing_vals / sub_popul_percent
 
         # add 1 to the sharing val (sum) for the remaining 90% of the population (as explained in `fitness_sharing` func due to subpopul not including all individuals)
-        sum += 1 if i >= sub_popul_size else 0
+        sum_sharing_vals += 1 if i >= sub_popul_size else 0
 
-        fitness_shared = org_fitness * sum
-        return fitness_shared, sum  # the sum is the penalty for being close to another individual
+        # 283626.35370461695
+        fitness_shared = org_fitness * sum_sharing_vals
+
+        # = 1 would be if all individuals are entirely different (highly unlikely)
+        assert sum_sharing_vals >= 1
+        assert fitness_shared >= org_fitness
+        return fitness_shared, sum_sharing_vals  # the sum is the penalty for being close to another individual
 
     @staticmethod
-    def fitness_sharing(fitnesses_org, population):
+    def fitness_sharing(fitnesses_org, population, sub_popul_percent, alpha):
         """
         The fitness sharing function is used to punish individuals that are close to other individuals.
         However, the fitness sharing function is computationally expensive, so we only compute it for the first 10% of the population.
@@ -205,7 +216,7 @@ class FitnessSharing:
         n = len(population[0])
 
         # randomly take 10% of the population to consider for sharing
-        sub_popul_percent = 0.1  # problem w/ subpopul is that for specific individuals, distance is 0 and for its very large
+        # sub_popul_percent = 0.1  # problem w/ subpopul is that for specific individuals, distance is 0 and for its very large
         # so can be that indiv is not included in neighbourhood so sharing val is 0. needs to be included in neighbourhood!
         sub_popul_size = int(popul_size * sub_popul_percent)
 
@@ -224,7 +235,7 @@ class FitnessSharing:
                 population,
                 subpopulation,
                 sub_popul_size,
-                sub_popul_percent, i, n)
+                sub_popul_percent, i, n, alpha)
                 for i in indices_steekproef])
 
         fitnesses_shared = fitnesses_shared_and_sum[:, 0]
@@ -240,41 +251,7 @@ class FitnessSharing:
         return fitnesses_shared
 
     @staticmethod
-    def fitness_sharing_slow(fitnesses_org, population):
-        fitnesses = fitnesses_org.copy()
-        popul_size = len(population)
-        n = len(population[0])
-
-        # randomly take 10% of the population to consider for sharing
-        sub_popul_percent = 0.1  # problem w/ subpopul is that for specific individuals, distance is 0 and for its very large
-        # so can be that indiv is not included in neighbourhood so sharing val is 0. needs to be included in neighbourhood!
-        sub_popul_size = int(popul_size * sub_popul_percent)
-
-        subpopulation = population[:sub_popul_size]  # take first 10% of population
-        # for remaining 90% of population, add 1 to the sharing val
-
-        for i in range(len(population)):
-
-            sharing_vals = np.zeros(sub_popul_size, dtype=np.float64)
-
-            for j in range(sub_popul_size):
-                dist = FitnessSharing.distance(population[i], subpopulation[j])
-
-                sharing_val = FitnessSharing.sharing_function(dist, max_distance=n)
-                sharing_vals[j] += sharing_val
-
-            sum = np.sum(sharing_vals)  # dependent on the subpopulation sizedfsafds
-            # So to rescale, we divide by the subpopulation percent
-            sum = sum / sub_popul_percent
-
-            # add 1 to the sharing val (sum) for the remaining 90% of the population (as explained above due to subpopul not including all individuals)
-            sum += 1 if i >= sub_popul_size else 0
-            fitnesses[i] = fitnesses[i] * sum
-
-        return fitnesses
-
-    @staticmethod
-    def sharing_function(d, max_distance):
+    def sharing_function(d, max_distance, alpha):
         # sigma_share is based on the maximum distance between any two individuals in the population, which is n
         # so only punish a candidate solution if it has a neighbour that is 1% of the max distance away
         # with similarity = # edges in common
@@ -282,20 +259,18 @@ class FitnessSharing:
         # sigma_share = max_distance * 0.1
         # sigma_share = max_distance * 0.2  # half of max distance
 
-        # = max neighbourhood distance
-        # sigma_share++ increases the neighbourhood distance -> more individuals are punished
-        # sigma_share-- decreases the neighbourhood distance -> less individuals are punished
-        sigma_share = max_distance * 0.2
-
-        # sigma_share = int(max_distance * 0.2) # start punishing when 750 * 0.2 = 150 edges in common
-
+        sigma_share = max_distance  # punish all individuals, how severe depends on alpha
         # alpha++ increases the penalty for being close to another individual
         # alpha-- decreases the penalty for being close to another individual
-        alpha = 1
+
+        assert sigma_share >= d
+
         if d <= sigma_share:
-            val = 1 - (d / sigma_share) ** alpha
+            val = (d / sigma_share) ** alpha
             return val
         else:
+            # throw not supported exception
+            raise Exception("d > sigma_share")
             return 0
 
     @staticmethod

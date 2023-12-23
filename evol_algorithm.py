@@ -13,7 +13,9 @@ from variation import Variation
 
 class EvolAlgorithm(AbstractAlgorithm):
     def __init__(self, benchmark, popul_size=1000, offspring_size_multiplier=2, k=3, mutation_rate=0.05,
-                 migrate_after_epochs=25, nb_islands=5, migration_percentage=0.1, keep_running_until_timeup=True):
+                 migrate_after_epochs=25, nb_islands=5, migration_percentage=0.1, fitness_sharing_subset_percentage=0.1,
+                 alpha=1,
+                 keep_running_until_timeup=True):
         self.benchmark = benchmark
         assert (benchmark.normalizing_constant == 1), \
             "Normalizing for EvolAlgorithm gives no benefits and should be disabled"
@@ -26,6 +28,8 @@ class EvolAlgorithm(AbstractAlgorithm):
         self.migrate_after_epochs = migrate_after_epochs
         self.nb_islands = nb_islands
         self.migration_percentage = migration_percentage
+        self.fitness_subset_percentage = fitness_sharing_subset_percentage
+        self.alpha_sharing = alpha  # 1
 
         super().__init__()
 
@@ -44,6 +48,11 @@ class EvolAlgorithm(AbstractAlgorithm):
         mutation = lambda offspring: Variation.mutation(offspring, self.mutation_rate)
         crossover = lambda selected: Variation.crossover(selected)
 
+        fitness_sharing = lambda fitnesses, population: FitnessSharing.fitness_sharing(fitnesses, population,
+                                                                                       self.fitness_subset_percentage,
+                                                                                       self.alpha_sharing)
+        # fitnesses = FitnessSharing.fitness_sharing(fitnesses_not_scaled, self.population)
+
         islands = [Island(idx, f, self.popul_size, n) for idx in range(self.nb_islands)]
 
         ctr = 0
@@ -52,7 +61,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             # run for a few epochs
             # Time to run for a few epochs
             done = Island.run_epochs(self.migrate_after_epochs, islands,
-                                     selection, elimination, mutation, crossover,
+                                     selection, elimination, mutation, crossover, fitness_sharing,
                                      score_tracker, ctr)
 
             # migrate
