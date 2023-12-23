@@ -44,25 +44,39 @@ class Island:
         done = False
         nb_islands = len(islands)
         for idx, island in enumerate(islands):
-            for epoch in range(nb_epochs):
-                # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
-                best_fitnesses[epoch], mean_fitnesses[epoch], best_sigma, last_fitnesses_shared = island.step(
-                    selection, elimination, mutation, score_tracker, epoch + ctr)
+            done, best_fitnesses, mean_fitnesses, best_sigma, last_fitnesses_shared = island._run_epoch(
+                done, nb_epochs, idx, island, selection, elimination, mutation, score_tracker, ctr, nb_islands)
 
-                if epoch == nb_epochs - 1:  # only print results for last epoch of each island
-                    Utility.print_score(epoch + ctr, best_fitnesses[epoch], np.mean(mean_fitnesses), 1,
-                                        avg_dist_func=lambda: FitnessSharing.avg_dist_func(island.population),
-                                        fitnesses_shared=np.mean(last_fitnesses_shared),
-                                        island_identifier=island.identifier)
-
-                if idx == nb_islands - 1:  # only store results for last island
-                    if score_tracker.utility.is_done_and_report(
-                            ctr + epoch, mean_fitnesses[epoch], best_fitnesses[epoch], best_sigma):
-                        done = True
-                        break
         print()
 
         return done
+
+    def _run_epoch(self, done, nb_epochs, idx, island, selection, elimination, mutation, score_tracker, ctr,
+                   nb_islands):
+        best_sigma, last_fitnesses_shared = None, []
+
+        # contains all fitnesses of a single island (for all epochs)
+        best_fitnesses = np.zeros(nb_epochs, dtype=np.float64)
+        mean_fitnesses = np.zeros(nb_epochs, dtype=np.float64)
+
+        for epoch in range(nb_epochs):
+            # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
+            best_fitnesses[epoch], mean_fitnesses[epoch], best_sigma, last_fitnesses_shared = island.step(
+                selection, elimination, mutation, score_tracker, epoch + ctr)
+
+            if epoch == nb_epochs - 1:  # only print results for last epoch of each island
+                Utility.print_score((ctr * nb_epochs) + epoch, best_fitnesses[epoch], np.mean(mean_fitnesses), 1,
+                                    avg_dist_func=lambda: FitnessSharing.avg_dist_func(island.population),
+                                    fitnesses_shared=np.mean(last_fitnesses_shared),
+                                    island_identifier=island.identifier)
+
+            if idx == nb_islands - 1:  # only store results for last island
+                if score_tracker.utility.is_done_and_report(
+                        (ctr * nb_epochs) + epoch, mean_fitnesses[epoch], best_fitnesses[epoch], best_sigma):
+                    done = True
+                    break
+
+        return done, best_fitnesses, mean_fitnesses, best_sigma, last_fitnesses_shared
 
     def step(self, selection, elimination, mutation, score_tracker, ctr):
         fitnesses_not_scaled = self.f(self.population)  # before fitness sharing
