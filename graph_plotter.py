@@ -112,7 +112,7 @@ class GraphPlotter:
 
         GraphPlotter.create_line_graph(
             numIterationss, meanObjectives, bestObjectives, timeElapseds,
-            "Number of seconds",
+            "Number of iterations",
             "Objective value",
             "Mean and best objective value over time",
             f"{filename}_mean_objective_value")

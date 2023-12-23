@@ -53,8 +53,8 @@ class Utility:
             print()
             print()
 
-    def is_done_and_report(self, i, meanObjective, bestObjective, bestSolution):
-        timeLeft = self.reporter.report(meanObjective, bestObjective, bestSolution)
+    def is_done_and_report(self, i, meanObjective, bestObjective, bestSolution, write_to_file):
+        timeLeft = self.reporter.report(meanObjective, bestObjective, bestSolution, write_to_file)
         time_over = (timeLeft < 0 and self.keep_running_until_timeup)
-        iters_over = (not (self.keep_running_until_timeup) and i > self.numIters)
+        iters_over = i > self.numIters
         return (time_over or iters_over)

@@ -21,10 +21,9 @@ class Reporter:
     # to the reporting file.
     #
     # Returns the time that is left in seconds as a floating-point number.
-    def report(self, meanObjective, bestObjective, bestSolution):
-        if (time.time() - self.startTime < self.allowedTime + self.writingTime):
+    def report(self, meanObjective, bestObjective, bestSolution, write_to_file=True):
+        if (time.time() - self.startTime < self.allowedTime + self.writingTime) and write_to_file:
             start = time.time()
-
             outFile = open(self.filename, "a")
             outFile.write(str(self.numIterations) + self.delimiter)
             outFile.write(str(start - self.startTime - self.writingTime) + self.delimiter)

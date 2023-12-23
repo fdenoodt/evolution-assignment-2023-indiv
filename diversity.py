@@ -37,20 +37,22 @@ class Island:
 
     @staticmethod
     def run_epochs(nb_epochs, islands, selection, elimination, mutation, crossover, score_tracker, ctr):
-        done = False
-        nb_islands = len(islands)
+        done = np.zeros(len(islands), dtype=bool)  # done for each island
 
-        results = [island._run_epoch(
-            done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
-            nb_islands)
-            for idx, island in enumerate(islands)]
+        done = [island._run_epoch(done[idx], nb_epochs, idx, island, selection, elimination, mutation, crossover,
+                                  score_tracker, ctr)
+                for idx, island in enumerate(islands)]
 
-        done = results[-1]
+        # shouldn't happen that one island is done and another is not
+        return np.any(done)
 
-        return done
+    def _run_epoch(self, done, nb_epochs, island_idx, island, selection, elimination, mutation, crossover,
+                   score_tracker, ctr):
 
-    def _run_epoch(self, done, nb_epochs, idx, island, selection, elimination, mutation, crossover, score_tracker, ctr,
-                   nb_islands):
+        # _run_epoch is called for epoch amount of times, could be that time was already over in previous epoch
+        # so don't run epoch if time is already over
+        if done:
+            return done
 
         # contains all fitnesses of a single island (for all epochs)
         best_fitnesses = np.zeros(nb_epochs, dtype=np.float64)
@@ -67,11 +69,14 @@ class Island:
                                     fitnesses_shared=np.mean(last_fitnesses_shared),
                                     island_identifier=island.identifier)
 
-            if idx == nb_islands - 1:  # only store results for last island
-                if score_tracker.utility.is_done_and_report(
-                        (ctr * nb_epochs) + epoch, mean_fitnesses[epoch], best_fitnesses[epoch], best_sigma):
-                    done = True
-                    break
+            write_to_file = True if island_idx == 0 else False  # only write to file for first island
+            if score_tracker.utility.is_done_and_report(
+                    (ctr * nb_epochs) + epoch, mean_fitnesses[epoch], best_fitnesses[epoch], best_sigma,
+                    write_to_file=write_to_file):
+                done = True
+                break
+
+
 
         return done
 
