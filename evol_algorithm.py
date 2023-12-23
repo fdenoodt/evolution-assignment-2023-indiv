@@ -13,25 +13,25 @@ from variation import Variation
 
 class EvolAlgorithm(AbstractAlgorithm):
     def __init__(self, benchmark, popul_size=1000, offspring_size_multiplier=2, k=3, mutation_rate=0.05,
-                 migrate_after_epochs=25):
+                 migrate_after_epochs=25, keep_running_until_timeup=True):
         self.benchmark = benchmark
 
         self.popul_size = popul_size
         self.offspring_size = offspring_size_multiplier * popul_size
         self.k = k  # Tournament selection
         self.mutation_rate = mutation_rate
-        self.keep_running_until_timeup = True
+        self.keep_running_until_timeup = keep_running_until_timeup
         self.migrate_after_epochs = migrate_after_epochs
 
         super().__init__()
 
-    def optimize(self, numIters, keep_running_until_timeup, reporter_name, *args):
+    def optimize(self, numIters, reporter_name, *args):
         n = self.benchmark.permutation_size()
 
         # since zero is implicit, we need to the edge from 0 to first node
         f = lambda population: self.benchmark.compute_fitness(population) + self.benchmark.matrix[0, population[:, 0]]
         maximize = self.benchmark.maximise
-        keep_running_until_timeup = keep_running_until_timeup
+        keep_running_until_timeup = self.keep_running_until_timeup
         score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.benchmark)
 
         selection = lambda population, fitnesses: (

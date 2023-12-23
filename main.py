@@ -28,18 +28,18 @@ def run_experiment():
     print("Running experiment with parameters:")
 
     # lr, nb_samples_lambda, numIters, U
-    lr = 0.9
+    # lr = 0.9
     nb_samples_lambda = 100
     # numIters = 1_000_000
-    numIters = 3000
-    U = PlackettLuce.U_identity
+    # U = PlackettLuce.U_identity
 
+    numIters = 3000
     benchmark = Benchmark(filename, normalize=True, maximise=False)
-    pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
+    # pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
     # pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
     # algorithm = PlackettLuceAlgorithm(lr, nb_samples_lambda, U, benchmark, pdf)
 
-    algorithm = EvolAlgorithm(benchmark, popul_size=100, offspring_size_multiplier=1, k=10, mutation_rate=0.05)
+    algorithm = EvolAlgorithm(benchmark, popul_size=100, offspring_size_multiplier=1, k=10, mutation_rate=0.05, migrate_after_epochs=25, keep_running_until_timeup=True)
     a = r0123456.r0123456(algorithm, numIters)
 
     try:
@@ -57,7 +57,7 @@ def run_experiment():
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    filename = "./tour750.csv"
+    filename = "./tour50.csv"
     # filename = "./benchmarks/be75eec.mat"
 
     # Set parameters

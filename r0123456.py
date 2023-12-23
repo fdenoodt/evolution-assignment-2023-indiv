@@ -12,10 +12,9 @@ class r0123456:
         self.reporter_name = self.__class__.__name__
         self.algorithm = algorithm
         self.numIters = numIters
-        self.keep_running_until_timeup = False
 
     def optimize(self):
-        self.algorithm.optimize(self.numIters, self.keep_running_until_timeup, self.reporter_name)
+        self.algorithm.optimize(self.numIters, self.reporter_name)
 
 # if __name__ == '__main__':
 # distanceMatrix = np.array([[0, 1, 2, 3, 4],
