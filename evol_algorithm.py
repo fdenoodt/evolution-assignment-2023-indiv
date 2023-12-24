@@ -45,15 +45,44 @@ class EvolAlgorithm(AbstractAlgorithm):
         selection = lambda population, fitnesses: (
             Selection.selection(population, self.k, self.offspring_size, fitnesses))
         elimination = lambda popul, fitnesses: Selection.elimination(popul, fitnesses, self.k, self.popul_size)
-        mutation = lambda offspring: Variation.mutation(offspring, self.mutation_rate)
-        crossover = lambda selected: Variation.crossover(selected)
 
-        fitness_sharing = lambda fitnesses, population: FitnessSharing.fitness_sharing(fitnesses, population,
-                                                                                       self.fitness_subset_percentage,
-                                                                                       self.alpha_sharing)
-        # fitnesses = FitnessSharing.fitness_sharing(fitnesses_not_scaled, self.population)
+        # mutation_functions = [
+        #     lambda offspring: Variation.swap_mutation(offspring, self.mutation_rate),
+        #     lambda offspring: Variation.inversion_mutation(offspring, self.mutation_rate),
+        #     lambda offspring: Variation.scramble_mutation(offspring, self.mutation_rate),
+        # ]
+        #
+        # crossover_functions = [lambda selected: Variation.crossover(selected)]
 
-        islands = [Island(idx, f, self.popul_size, n) for idx in range(self.nb_islands)]
+        fitness_sharing = lambda fitnesses, population: FitnessSharing.fitness_sharing(
+            fitnesses, population,
+            self.fitness_subset_percentage,
+            self.alpha_sharing)
+
+        # Ensure that we have a a pair of every mutation and crossover combination
+        mutation_functions = [
+            lambda offspring: Variation.swap_mutation(offspring, self.mutation_rate),
+            lambda offspring: Variation.inversion_mutation(offspring, self.mutation_rate),
+            lambda offspring: Variation.scramble_mutation(offspring, self.mutation_rate),
+        ]
+        crossover_functions = [
+            lambda selected: Variation.crossover(selected),
+            # lambda selected: Variation.order_crossover(selected),
+            # lambda selected: Variation.cycle_crossover(selected),
+        ]
+
+        # create a list of all possible combinations
+        functions = np.array([
+            (mutation, crossover) for mutation in mutation_functions for crossover in crossover_functions
+        ])
+
+        # shuffle the list
+        np.random.shuffle(functions)
+
+        islands = [Island(idx, f, self.popul_size, n,
+                          mutation=functions[idx % len(functions)][0],
+                          crossover=functions[idx % len(functions)][1])
+                   for idx in range(self.nb_islands)]
 
         ctr = 0
         done = False
@@ -61,7 +90,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             # run for a few epochs
             # Time to run for a few epochs
             done = Island.run_epochs(self.migrate_after_epochs, islands,
-                                     selection, elimination, mutation, crossover, fitness_sharing,
+                                     selection, elimination, fitness_sharing,
                                      score_tracker, ctr)
 
             # migrate

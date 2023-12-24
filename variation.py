@@ -115,20 +115,70 @@ class Variation:
         return offsprings
 
     @staticmethod
-    def mutation_slow(offspring):  # slow
-        # swap mutation
-        # for each individual, swap 2 cities
-        nb_cities = np.size(offspring, 1)
-        for i in range(len(offspring)):
-            individual = offspring[i]
-            # idx1 = random.randint(0, nb_cities - 1)
-            # idx2 = random.randint(0, nb_cities - 1)
-            idx1 = np.random.randint(0, nb_cities)  # np.random.randint upperboun is exclusive
-            idx2 = np.random.randint(0, nb_cities)  # np.random.randint upperboun is exclusive
-            individual[idx1], individual[idx2] = individual[idx2], individual[idx1]
+    def swap_mutation(offspring_popul, mutation_rate):
+        """
+        Swaps exactly 2 cities in the offspring
+        :param offspring_popul: shape: (popul_size, nb_cities)
+        :param mutation_rate: float
+        :return:
+        """
+
+        # Calculate the number of individuals to mutate based on the mutation rate
+        num_individuals_to_mutate = int(len(offspring_popul) * mutation_rate)
+
+        # reshuffle the offspring
+        np.random.shuffle(offspring_popul)
+
+        # Select random indices to mutate
+        offspring_popul = offspring_popul[:num_individuals_to_mutate]
+
+        nb_cities = np.size(offspring_popul, 1)
+        row_indices = np.arange(len(offspring_popul))
+        idx1 = np.random.randint(0, nb_cities, len(offspring_popul))
+        idx2 = np.random.randint(0, nb_cities, len(offspring_popul))
+
+        # Swap elements using advanced indexing
+        # idea: offspring_popul[0], offspring_popul[1] = offspring_popul[1], offspring_popul[0]
+        offspring_popul[row_indices, idx1], offspring_popul[row_indices, idx2] = \
+            offspring_popul[row_indices, idx2], offspring_popul[row_indices, idx1]
 
     @staticmethod
-    def mutation(offspring_popul, mutation_rate):
+    def inversion_mutation(offspring_popul, mutation_rate):  # Entirely generated via Copilot
+        """
+        Inverts a random subsequence of the offspring
+        :param offspring_popul: shape: (popul_size, nb_cities)
+        :param mutation_rate: float
+        :return:
+        """
+
+        # Calculate the number of individuals to mutate based on the mutation rate
+        num_individuals_to_mutate = int(len(offspring_popul) * mutation_rate)
+
+        # reshuffle the offspring
+        np.random.shuffle(offspring_popul)
+
+        # Select random indices to mutate
+        offspring_popul = offspring_popul[:num_individuals_to_mutate]
+
+        nb_cities = np.size(offspring_popul, 1)
+        row_indices = np.arange(len(offspring_popul))
+        idx1 = np.random.randint(0, nb_cities, len(offspring_popul))
+        idx2 = np.random.randint(0, nb_cities, len(offspring_popul))
+
+        # Swap elements using advanced indexing
+        # idea: offspring_popul[0], offspring_popul[1] = offspring_popul[1], offspring_popul[0]
+        offspring_popul[row_indices, idx1], offspring_popul[row_indices, idx2] = \
+            offspring_popul[row_indices, idx2], offspring_popul[row_indices, idx1]
+
+    @staticmethod
+    def scramble_mutation(offspring_popul, mutation_rate):  # Entirely generated via Copilot
+        """
+        Scrambles a random subsequence of the offspring
+        :param offspring_popul: shape: (popul_size, nb_cities)
+        :param mutation_rate: float
+        :return:
+        """
+
         # Calculate the number of individuals to mutate based on the mutation rate
         num_individuals_to_mutate = int(len(offspring_popul) * mutation_rate)
 
@@ -192,3 +242,36 @@ class Variation:
         if not (deleted_cities[next_city_m]) and next_city_m != next_city_f:  # deleted -> 0
             count += 1
         return count
+
+
+if __name__ == "__main__":
+    print("*" * 20)
+    print("Testing swap mutation")
+
+    n = 10
+    popul_size = 5
+    mutation_rate = 1
+    popul = np.array([np.arange(n) for _ in range(popul_size)])
+    print("popul:")
+    print(popul)
+    Variation.swap_mutation(popul, mutation_rate)
+    print("after mutate:")
+    print(popul)
+
+    print("*" * 20)
+    print("Testing inversion mutation")
+    popul = np.array([np.arange(n) for _ in range(popul_size)])
+    print("popul:")
+    print(popul)
+    Variation.inversion_mutation(popul, mutation_rate)
+    print("after mutate:")
+    print(popul)
+
+    print("*" * 20)
+    print("Testing scramble mutation")
+    popul = np.array([np.arange(n) for _ in range(popul_size)])
+    print("popul:")
+    print(popul)
+    Variation.scramble_mutation(popul, mutation_rate)
+    print("after mutate:")
+    print(popul)

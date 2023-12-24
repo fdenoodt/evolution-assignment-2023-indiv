@@ -7,11 +7,13 @@ from variation import Variation
 
 
 class Island:
-    def __init__(self, identifier, f, popul_size, n):
+    def __init__(self, identifier, f, popul_size, n, mutation, crossover):
         self.identifier = identifier
         self.f = f
         self.popul_size = popul_size
         self.population = Island.initialize_population(self.popul_size, n)
+        self.mutation = mutation
+        self.crossover = crossover
 
     @staticmethod
     def initialize_population(population_size, num_cities):
@@ -36,19 +38,19 @@ class Island:
         return population
 
     @staticmethod
-    def run_epochs(nb_epochs, islands, selection, elimination, mutation, crossover, fitness_sharing,
-                   score_tracker, ctr):
+    def run_epochs(nb_epochs, islands, selection, elimination, fitness_sharing, score_tracker, ctr):
         done = np.zeros(len(islands), dtype=bool)  # done for each island
 
-        done = [island._run_epoch(done[idx], nb_epochs, idx, island, selection, elimination, mutation, crossover,
-                                  fitness_sharing, score_tracker, ctr)
-                for idx, island in enumerate(islands)]
+        done = [
+            island._run_epoch(done[idx], nb_epochs, idx, island, selection, elimination, fitness_sharing, score_tracker,
+                              ctr)
+            for idx, island in enumerate(islands)]
 
         # shouldn't happen that one island is done and another is not
         return np.any(done)
 
-    def _run_epoch(self, done, nb_epochs, island_idx, island, selection, elimination, mutation, crossover,
-                   fitness_sharing, score_tracker, ctr):
+    def _run_epoch(self, done, nb_epochs, island_idx, island, selection, elimination, fitness_sharing, score_tracker,
+                   ctr):
 
         # _run_epoch is called for epoch amount of times, could be that time was already over in previous epoch
         # so don't run epoch if time is already over
@@ -62,7 +64,7 @@ class Island:
         for epoch in range(nb_epochs):
             # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
             best_fitnesses[epoch], mean_fitnesses[epoch], best_sigma, last_fitnesses_shared = island.step(
-                selection, elimination, mutation, crossover, fitness_sharing, score_tracker, epoch + ctr)
+                selection, elimination, fitness_sharing, score_tracker, epoch + ctr)
 
             if epoch == nb_epochs - 1:  # only print results for last epoch of each island
                 Utility.print_score((ctr * nb_epochs) + epoch, best_fitnesses[epoch], np.mean(mean_fitnesses), 1,
@@ -79,7 +81,7 @@ class Island:
 
         return done
 
-    def step(self, selection, elimination, mutation, crossover, fitness_sharing, score_tracker, ctr):
+    def step(self, selection, elimination, fitness_sharing, score_tracker, ctr):
         fitnesses = self.f(self.population)  # before fitness sharing
 
         # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
@@ -100,14 +102,14 @@ class Island:
         selected = selection(self.population, fitnesses_shared)
 
         # Variation
-        offspring = crossover(selected)
-        mutation(offspring)
+        offspring = self.crossover(selected)
+        self.mutation(offspring)
 
         joined_popul = np.vstack((offspring, self.population))
 
         # Evaluation / elimination
         fitnesses = self.f(joined_popul)
-        self.population = elimination(joined_popul, fitnesses) # elimination is not based on fitness sharing
+        self.population = elimination(joined_popul, fitnesses)  # elimination is not based on fitness sharing
 
         # shuffle popul in place, required because other functions such
         # Diversity.fitness_sharing uses the first 10% of the population assuming it is random
@@ -212,6 +214,10 @@ class FitnessSharing:
 
         The remaining 90% of the population receives a sharing val of fitness * avg sharing val multiplier.
         """
+
+        if sub_popul_percent == 0:  # if 0, then no fitness sharing
+            return fitnesses_org
+
         popul_size = len(population)
         n = len(population[0])
 
