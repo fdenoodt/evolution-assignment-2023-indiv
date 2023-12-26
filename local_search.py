@@ -6,7 +6,7 @@ from benchmark_tsp import Benchmark
 class LocalSearch:
 
     @staticmethod
-    def two_opt(population, d):
+    def two_opt_slow(population, d):
         # https://stackoverflow.com/questions/53275314/2-opt-algorithm-to-solve-the-travelling-salesman-problem-in-python
         population = population.copy()
         population = np.hstack((np.zeros((len(population), 1), dtype=int), population))
@@ -38,19 +38,20 @@ class LocalSearch:
         return population
 
     @staticmethod
-    def two_opt_fast(population, d, subset_percentage):
+    def two_opt(population, d, jump_size):
         # https://stackoverflow.com/questions/53275314/2-opt-algorithm-to-solve-the-travelling-salesman-problem-in-python
         population = population.copy()
         population = np.hstack((np.zeros((len(population), 1), dtype=int), population))
-        subpopul = population[:int(len(population) * subset_percentage)]
         nb_cities = np.size(population, 1)
 
-        # since matrix is not symmetric, we need to check both directions
-        for indiv_idx, indivd in enumerate(subpopul):
+        for indiv_idx, indivd in enumerate(population):
             # based on: https://dm865.github.io/assets/dm865-tsp-ls-handout.pdf
 
-            for i in range(nb_cities - 1):
-                for j in range(0, nb_cities - 1):  # maybe can start at i+1 if we know the matrix is symmetric
+            starting_idx1 = np.random.randint(0, jump_size)
+            for i in range(starting_idx1, nb_cities - 1, jump_size):
+                starting_idx2 = np.random.randint(0, jump_size)
+                for j in range(starting_idx2, nb_cities - 1,
+                               jump_size):  # maybe can start at i+1 if we know the matrix is symmetric
                     if i == j:
                         continue
 
@@ -120,11 +121,11 @@ if __name__ == "__main__":
     print(f"before: {np.average(fitnesses_before):_.4f}")
 
     # population2 = LocalSearch.two_opt_swap(population2, benchmark.matrix)
-    population2 = LocalSearch.two_opt_fast(population2, benchmark.matrix, 0.5)
+    population2 = LocalSearch.two_opt(population2, benchmark.matrix, 5)
     fitnesses_after = benchmark.compute_fitness(population2)
     print(f"fast: {np.average(fitnesses_after):_.4f}")
 
-    population1 = LocalSearch.two_opt(population1, benchmark.matrix)
+    population1 = LocalSearch.two_opt_slow(population1, benchmark.matrix)
     fitnesses_after = benchmark.compute_fitness(population1)
     print(f"two: {np.average(fitnesses_after):_.4f}")
     assert np.all(np.less_equal(fitnesses_after, fitnesses_before))
