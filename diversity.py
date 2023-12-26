@@ -2,6 +2,7 @@ import numpy as np
 
 from ScoreTracker import ScoreTracker
 from benchmark_tsp import Benchmark
+from local_search import LocalSearch
 from utility import Utility
 from variation import Variation
 
@@ -24,7 +25,7 @@ class Island:
 
         # add 0 to the start of each individual (implicit starting point)
         # values between 1 and num_cities
-        population = np.array([np.random.permutation(num_cities - 1) + 1 for _ in range(population_size)])
+        population = np.array([np.random.permutation(num_cities - 1) + 1 for _ in range(population_size)], dtype=int)
 
         # Our representation (adjacency representation):
         # eg: 0 1 2 3 4
@@ -106,7 +107,9 @@ class Island:
         # offspring = selected.copy() # no crossover
         self.mutation(offspring)
 
-        joined_popul = np.vstack((offspring, self.population))
+        offspring = LocalSearch.local_search(offspring, fitnesses_shared, benchmark)
+
+        joined_popul = np.vstack((offspring, self.population)) #  old population should have been optimized before
 
         # Evaluation / elimination
         fitnesses = self.f(joined_popul)
@@ -128,6 +131,8 @@ class Island:
 
     @staticmethod
     def migrate(islands, popul_size, percentage=0.1):
+        assert len(islands) > 0
+
         if len(islands) == 1:
             return
 

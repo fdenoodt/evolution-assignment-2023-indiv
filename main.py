@@ -41,8 +41,8 @@ def run_experiment():
 
     algorithm = EvolAlgorithm(benchmark, popul_size=100,
                               offspring_size_multiplier=1, k=10, mutation_rate=0, migrate_after_epochs=25,
-                              nb_islands=5, migration_percentage=0.05,
-                              fitness_sharing_subset_percentage=0,  # higher is more accurate, but slower
+                              nb_islands=1, migration_percentage=0.05,
+                              fitness_sharing_subset_percentage=0.05,  # higher is more accurate, but slower
                               alpha=1, #
                               keep_running_until_timeup=True)
     a = r0123456.r0123456(algorithm, numIters)
