@@ -103,6 +103,7 @@ class Island:
 
         # Variation
         offspring = self.crossover(selected)
+        # offspring = selected.copy() # no crossover
         self.mutation(offspring)
 
         joined_popul = np.vstack((offspring, self.population))
@@ -116,8 +117,12 @@ class Island:
         np.random.shuffle(self.population)
 
         # sanity check
-        # for i in range(len(population)):
-        #     assert len(population[i]) == len(set(population[i])) == n - 1
+        n = len(self.population[0])
+        for i in range(len(self.population)):
+            assert len(self.population[i]) == len(set(self.population[i])) == n
+
+        # check if population still has the same size
+        assert len(self.population) == self.popul_size
 
         return best_fitness, mean_fitness, best_sigma, fitnesses_shared
 

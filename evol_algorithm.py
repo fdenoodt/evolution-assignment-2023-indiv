@@ -46,14 +46,6 @@ class EvolAlgorithm(AbstractAlgorithm):
             Selection.selection(population, self.k, self.offspring_size, fitnesses))
         elimination = lambda popul, fitnesses: Selection.elimination(popul, fitnesses, self.k, self.popul_size)
 
-        # mutation_functions = [
-        #     lambda offspring: Variation.swap_mutation(offspring, self.mutation_rate),
-        #     lambda offspring: Variation.inversion_mutation(offspring, self.mutation_rate),
-        #     lambda offspring: Variation.scramble_mutation(offspring, self.mutation_rate),
-        # ]
-        #
-        # crossover_functions = [lambda selected: Variation.crossover(selected)]
-
         fitness_sharing = lambda fitnesses, population: FitnessSharing.fitness_sharing(
             fitnesses, population,
             self.fitness_subset_percentage,
@@ -67,8 +59,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         ]
         crossover_functions = [
             lambda selected: Variation.crossover(selected),
-            # lambda selected: Variation.order_crossover(selected),
-            # lambda selected: Variation.cycle_crossover(selected),
+            lambda selected: Variation.order_crossover(selected),
         ]
 
         # create a list of all possible combinations

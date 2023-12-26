@@ -243,35 +243,111 @@ class Variation:
             count += 1
         return count
 
+    @staticmethod
+    def order_crossover(selected):
+        """ Calls crossover function twice for each pair of parents. Thus returns 2 offsprings per pair of parents
+        :param selected: shape: (popul_size, nb_cities)
+        :return: shape: (popul_size, nb_cities)
+        """
+        # add 0 node at the start
+        selected = selected.copy()
+        selected = np.hstack((np.zeros((len(selected), 1), dtype=int), selected))
+        nb_cities = np.size(selected, 1)
+
+        fathers = selected[::2]
+        mothers = selected[1::2]
+
+        offsprings1 = Variation._order_crossover(fathers, mothers, nb_cities)
+        offsprings2 = Variation._order_crossover(mothers, fathers, nb_cities)
+        offsprings = np.vstack((offsprings1, offsprings2))
+        return offsprings
+
+    @staticmethod
+    def _order_crossover(fathers, mothers, nb_cities):
+        # 1. Select two random crossover points
+        idx1 = np.random.randint(0, nb_cities, len(fathers), dtype=np.int32)
+        idx2 = np.random.randint(0, nb_cities, len(mothers), dtype=np.int32)
+        idx1, idx2 = np.sort([idx1, idx2], axis=0)
+
+        # 2. Copy the subsequence between the two points from the first parent to the first offspring
+        # offsprings = np.zeros((len(fathers), nb_cities), dtype=int)
+        offsprings = np.zeros_like(fathers, dtype=int)
+        nb_fathers = len(fathers)
+        for i in range(nb_fathers):
+            offspring = offsprings[i]
+            father = fathers[i]
+
+            # copy the subsequence between the two points from the first parent to the first offspring
+            offspring[idx1[i]:idx2[i]] = father[idx1[i]:idx2[i]]
+
+        # 3. Copy the remaining elements from the second parent to the first offspring, starting after the second crossover point, wrapping around the list
+        # must check if the element is already in the offspring, if so then skip
+        nb_mothers = len(mothers)
+
+        offsprings_wo_zeros = np.zeros((nb_mothers, nb_cities - 1), dtype=int)
+        for i in range(nb_mothers):
+            offspring = offsprings[i]
+            mother = mothers[i]
+
+            idx_mother = idx2[i]  # start copying from the second crossover point
+            idx_offspring = (idx2[i] + 1) % nb_cities
+            # copy the remaining elements from the second parent to the first offspring
+            for j in range(nb_cities):
+                if mother[idx_mother] not in offspring:
+                    offspring[idx_offspring] = mother[idx_mother]
+                    idx_offspring = (idx_offspring + 1) % nb_cities
+                idx_mother = (idx_mother + 1) % nb_cities
+
+            # Must remove the 0 from the offspring and shift the elements to the start
+            zero_idx = np.where(offspring == 0)[0][0]  # first find the index of the 0
+            offspring = np.roll(offspring, shift=-zero_idx, axis=0)
+            offspring = offspring[1:]
+            offsprings_wo_zeros[i] = offspring
+
+        return offsprings_wo_zeros
+
 
 if __name__ == "__main__":
-    print("*" * 20)
-    print("Testing swap mutation")
-
+    # fixed seed
+    np.random.seed(123456)
+    #
+    # print("*" * 20)
+    # print("Testing swap mutation")
+    #
     n = 10
-    popul_size = 5
-    mutation_rate = 1
-    popul = np.array([np.arange(n) for _ in range(popul_size)])
-    print("popul:")
-    print(popul)
-    Variation.swap_mutation(popul, mutation_rate)
-    print("after mutate:")
-    print(popul)
+    # popul_size = 5
+    # mutation_rate = 1
+    # popul = np.array([np.arange(n) for _ in range(popul_size)])
+    # print("popul:")
+    # print(popul)
+    # Variation.swap_mutation(popul, mutation_rate)
+    # print("after mutate:")
+    # print(popul)
+    #
+    # print("*" * 20)
+    # print("Testing inversion mutation")
+    # popul = np.array([np.arange(n) for _ in range(popul_size)])
+    # print("popul:")
+    # print(popul)
+    # Variation.inversion_mutation(popul, mutation_rate)
+    # print("after mutate:")
+    # print(popul)
+    #
+    # print("*" * 20)
+    # print("Testing scramble mutation")
+    # popul = np.array([np.arange(n) for _ in range(popul_size)])
+    # print("popul:")
+    # print(popul)
+    # Variation.scramble_mutation(popul, mutation_rate)
+    # print("after mutate:")
+    # print(popul)
 
     print("*" * 20)
-    print("Testing inversion mutation")
-    popul = np.array([np.arange(n) for _ in range(popul_size)])
-    print("popul:")
+    print("Testing order crossover")
+    # popul = np.array([np.arange(1, n) for _ in range(2)])
+    popul = np.array([np.arange(1, n), np.random.permutation(n - 1) + 1])
+    print("popul before:")
     print(popul)
-    Variation.inversion_mutation(popul, mutation_rate)
-    print("after mutate:")
-    print(popul)
-
-    print("*" * 20)
-    print("Testing scramble mutation")
-    popul = np.array([np.arange(n) for _ in range(popul_size)])
-    print("popul:")
-    print(popul)
-    Variation.scramble_mutation(popul, mutation_rate)
-    print("after mutate:")
+    popul = Variation.order_crossover(popul)
+    print("popul after:")
     print(popul)
