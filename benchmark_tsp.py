@@ -1,4 +1,6 @@
 import numpy as np
+from python_tsp.exact import solve_tsp_dynamic_programming
+from python_tsp.heuristics import solve_tsp_simulated_annealing
 
 from abstract_benchmark import AbstractBenchmark
 
@@ -62,11 +64,23 @@ class Benchmark(AbstractBenchmark):
         # eg: [100,200, ... ]
         return fitnesses
 
+    def dp_solve(self):
+        distance_matrix = self.matrix  # [:10, :10]
+        permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
+
+        return permutation, distance
+
+    def meta_solve(self):
+        distance_matrix = self.matrix  # [:10, :10]
+        permutation, distance = solve_tsp_simulated_annealing(distance_matrix)
+
+        return permutation, distance
+
 
 if __name__ == "__main__":
     # test whether compute_fitness and compute_fitness_good give the same results
     filename = "./tour50.csv"
-    benchmark = Benchmark(filename, normalize=True, maximise=False)
+    benchmark = Benchmark(filename, normalize=False, maximise=False)
 
     population = np.random.rand(1000, 50) * 50
     population = population.astype(int)
@@ -75,3 +89,11 @@ if __name__ == "__main__":
     fitnesses_slow = benchmark.compute_fitness_slow(population)
 
     assert np.all(np.equal(fitnesses, fitnesses_slow))
+
+    # Solve
+    # permutation, distance = benchmark.meta_solve()
+    permutation, distance = benchmark.dp_solve()
+    print(permutation)
+    print(distance)
+
+
