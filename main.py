@@ -42,9 +42,9 @@ def run_experiment():
     algorithm = EvolAlgorithm(benchmark, popul_size=100,
                               offspring_size_multiplier=1, k=10, mutation_rate=0, migrate_after_epochs=25,
                               nb_islands=5, migration_percentage=0.05,
-                              fitness_sharing_subset_percentage=0.1,  # higher is more accurate, but slower
+                              fitness_sharing_subset_percentage=0,  # higher is more accurate, but slower
                               alpha=1, #
-                              keep_running_until_timeup=False)
+                              keep_running_until_timeup=True)
     a = r0123456.r0123456(algorithm, numIters)
 
     try:
@@ -62,7 +62,7 @@ def run_experiment():
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    filename = "./tour50.csv"
+    filename = "./tour750.csv"
     # filename = "./benchmarks/be75eec.mat"
 
     # Set parameters

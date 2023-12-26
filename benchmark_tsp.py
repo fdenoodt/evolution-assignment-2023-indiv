@@ -79,7 +79,7 @@ class Benchmark(AbstractBenchmark):
 
 if __name__ == "__main__":
     # test whether compute_fitness and compute_fitness_good give the same results
-    filename = "./tour50.csv"
+    filename = "./tour750.csv"
     benchmark = Benchmark(filename, normalize=False, maximise=False)
 
     population = np.random.rand(1000, 50) * 50
@@ -91,8 +91,8 @@ if __name__ == "__main__":
     assert np.all(np.equal(fitnesses, fitnesses_slow))
 
     # Solve
-    # permutation, distance = benchmark.meta_solve()
-    permutation, distance = benchmark.dp_solve()
+    permutation, distance = benchmark.meta_solve()
+    # permutation, distance = benchmark.dp_solve()
     print(permutation)
     print(distance)
 
