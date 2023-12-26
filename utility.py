@@ -10,17 +10,20 @@ class Utility:
 
     @staticmethod
     def print_score(ctr, best_fitness, avg_fitness, frequency=10, avg_dist_func=None, fitnesses_shared=None,
-                    island_identifier=None):
+                    island=None):
         # avg_dist_func can only be used if fitnesses_shared is not None
         assert (avg_dist_func is None) or (fitnesses_shared is not None)
 
         if ctr % frequency == 0:
             if callable(avg_dist_func):
-                assert island_identifier is not None
+                assert island is not None
                 average_distance = avg_dist_func()
                 avg_fitness_shared = np.mean(fitnesses_shared)
                 print(
-                    f"Isl: {island_identifier}, iter: {ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}, fit shared: {avg_fitness_shared:_.4f}, avg dist: {average_distance:_.4f}")
+                    f"Isl: {island.identifier}, iter: {ctr} \t best fitness: {best_fitness:_.4f}, "
+                    f"avg fitness: {avg_fitness:_.4f}, fit shared: {avg_fitness_shared:_.4f}, avg dist: {average_distance:_.4f} "
+                    f"\t[{island.crossover.__name__} {island.mutation.__name__}]"
+                )
             else:
                 print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
 

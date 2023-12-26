@@ -70,7 +70,7 @@ class Island:
                 Utility.print_score((ctr * nb_epochs) + epoch, best_fitnesses[epoch], np.mean(mean_fitnesses), 1,
                                     avg_dist_func=lambda: FitnessSharing.avg_dist_func(island.population),
                                     fitnesses_shared=np.mean(last_fitnesses_shared),
-                                    island_identifier=island.identifier)
+                                    island=island)
 
             write_to_file = True if island_idx == 0 else False  # only write to file for first island
             if score_tracker.utility.is_done_and_report(
@@ -95,7 +95,7 @@ class Island:
             # only applicable to Evol, not PlackettLuce
             avg_dist_func=lambda: FitnessSharing.avg_dist_func(self.population),
             island_identifier=self.identifier,
-            print_score=False
+            print_score=False  # printing is already done in _run_epoch, but print_score=True is used in PlackettLuce
         )
 
         # Selection

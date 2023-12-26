@@ -51,7 +51,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             self.fitness_subset_percentage,
             self.alpha_sharing)
 
-        # Ensure that we have a a pair of every mutation and crossover combination
+        # Ensure that we have a pair of every mutation and crossover combination
         mutation_functions = [
             lambda offspring: Variation.swap_mutation(offspring, self.mutation_rate),
             lambda offspring: Variation.inversion_mutation(offspring, self.mutation_rate),
@@ -61,6 +61,14 @@ class EvolAlgorithm(AbstractAlgorithm):
             lambda selected: Variation.crossover(selected),
             lambda selected: Variation.order_crossover(selected),
         ]
+        # set names of the lambda functions for easy printing
+        mutation_functions[0].__name__ = "swap_mutation"
+        mutation_functions[1].__name__ = "inversion_mutation"
+        mutation_functions[2].__name__ = "scramble_mutation"
+
+        crossover_functions[0].__name__ = "edge_crossover"
+        crossover_functions[1].__name__ = "order_crossover"
+
 
         # create a list of all possible combinations
         functions = np.array([
