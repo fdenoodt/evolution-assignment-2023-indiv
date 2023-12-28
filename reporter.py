@@ -6,7 +6,7 @@ import time
 class Reporter:
     def __init__(self, filename, second_filename=None):
         print("Reporter: " + filename)
-        self.allowedTime = 3  #300 5 minutes
+        self.allowedTime = 300 #5 minutes
         self.numIterations = 0
         self.filename = filename + ".csv"
         self.second_filename = second_filename + ".csv" if second_filename is not None else None
@@ -53,7 +53,6 @@ class Reporter:
                     outFile.write(str(bestSolution[i]) + self.delimiter)
                 outFile.write('\n')
                 outFile.close()
-
 
             self.numIterations += 1
             self.writingTime += time.time() - start

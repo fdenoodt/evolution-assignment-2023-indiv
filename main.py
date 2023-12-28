@@ -142,6 +142,42 @@ def append_to_file(filename, text):
         f.write(text + "\n")
 
 
+def find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=100):
+    # Set parameters
+    hyperparams = HyperparamsEvolAlgorithm()  # start with default params, and change one at a time
+
+    test_params = {
+        "popul_size": [10, 100, 200, 500, 1000] if fixed_popul_size is None else [fixed_popul_size],
+        "offspring_size_multiplier": [1, 2, 3],
+        "k": [3, 5, 25],
+        "mutation_rate": [0.05, 0.2, 0.4],
+        "migrate_after_epochs": [25, 50],
+        "migration_percentage": [0.05, 0.1],
+        "merge_after_percent_time_left": [0.5, 0.75, 0.9],
+        "fitness_sharing_subset_percentage": [0.05, 0.2, 0.5],
+        "alpha": [1, 2, 0.5],
+        "local_search": [(None, None), ("2-opt", 1), ("2-opt", 5),
+                         ("insert_random_node", 0.1), ("insert_random_node", 0.5), ("insert_random_node", 1)]
+    }
+
+    # filename
+    append_to_file(f"best_params.txt", f"\n\n\n*********{benchmark_filename}*********")
+
+    for param_name, param_values in test_params.items():
+        best_param, all_time_best_fitness = find_optimal_param(param_name, param_values, hyperparams,
+                                                               benchmark_filename)
+        print()
+        print()
+        print()
+        print("*" * 100)
+        print(f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
+        print("*" * 100)
+        print()
+        print()
+        print()
+        append_to_file("best_params.txt", f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
+
+
 if __name__ == "__main__":
     # benchmark_filename = "./benchmarks/be75eec.mat"
 
@@ -160,31 +196,13 @@ if __name__ == "__main__":
 
     seed = 123456
     np.random.seed(seed)
-    benchmark_filename = "./tour750.csv"
-
-    # Set parameters
-    hyperparams = HyperparamsEvolAlgorithm()  # start with default params, and change one at a time
-
-    test_params = {
-        "popul_size": [10, 100, 200, 500, 1000],
-        "offspring_size_multiplier": [1, 2, 3],
-        "k": [3, 5, 25],
-        "mutation_rate": [0.05, 0.2, 0.4],
-        "migrate_after_epochs": [25, 50],
-        "migration_percentage": [0.05, 0.1],
-        "merge_after_percent_time_left": [0.5, 0.75, 0.9],
-        "fitness_sharing_subset_percentage": [0.05, 0.2, 0.5],
-        "alpha": [1, 2, 0.5],
-        "local_search": [(None, None), ("2-opt", 1), ("2-opt", 5),
-                         ("insert_random_node", 0.1), ("insert_random_node", 0.5), ("insert_random_node", 1)]
-    }
 
     clear_file("best_params.txt")
-    # filename
-    append_to_file("best_params.txt", f"\n\n\n*********{benchmark_filename}*********")
 
-    for param_name, param_values in test_params.items():
-        best_param, all_time_best_fitness = find_optimal_param(param_name, param_values, hyperparams,
-                                                               benchmark_filename)
-        print(f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
-        append_to_file("best_params.txt", f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
+    for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
+        find_optimal_param_for_tsp(benchmark_filename)
+
+    # do same but fix popul_size=100
+    for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
+        find_optimal_param_for_tsp(benchmark_filename)
+
