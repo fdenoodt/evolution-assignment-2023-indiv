@@ -30,8 +30,8 @@ class EvolAlgorithm(AbstractAlgorithm):
         self.fitness_subset_percentage = hyperparams.fitness_sharing_subset_percentage
         self.alpha_sharing = hyperparams.alpha
 
-        self.local_search = hyperparams.local_search
-        self.local_search_param = hyperparams.local_search_param
+        self.local_search = hyperparams.local_search[0]
+        self.local_search_param = hyperparams.local_search[1]
 
         self.filename = filename  # used for saving the results
 

@@ -1,0 +1,5 @@
+
+
+
+*********./tour750.csv*********
+Best popul_size is 100 with fitness 20389.441018654124

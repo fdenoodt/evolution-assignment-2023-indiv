@@ -14,7 +14,7 @@ class r0698535:
         self.numIters = numIters
 
     def optimize(self):
-        self.algorithm.optimize(self.numIters, self.reporter_name)
+        return self.algorithm.optimize(self.numIters, self.reporter_name)
 
 # if __name__ == '__main__':
 # distanceMatrix = np.array([[0, 1, 2, 3, 4],
