@@ -7,7 +7,7 @@ from utility import Utility
 import numpy as np
 
 
-class r0123456:
+class r0698535:
     def __init__(self, algorithm: AbstractAlgorithm, numIters):
         self.reporter_name = self.__class__.__name__
         self.algorithm = algorithm

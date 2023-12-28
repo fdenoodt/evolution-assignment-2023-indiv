@@ -12,7 +12,7 @@ from variation import Variation
 
 
 class EvolAlgorithm(AbstractAlgorithm):
-    def __init__(self, benchmark, hyperparams):
+    def __init__(self, benchmark, hyperparams, filename=None):
         self.benchmark = benchmark
         assert (benchmark.normalizing_constant == 1), \
             "Normalizing for EvolAlgorithm gives no benefits and should be disabled"
@@ -29,6 +29,8 @@ class EvolAlgorithm(AbstractAlgorithm):
         self.fitness_subset_percentage = hyperparams.fitness_sharing_subset_percentage
         self.alpha_sharing = hyperparams.alpha
 
+        self.filename = filename # used for saving the results
+
         super().__init__()
 
     def optimize(self, numIters, reporter_name, *args):
@@ -38,7 +40,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         f = lambda population: self.benchmark.compute_fitness(population) + self.benchmark.matrix[0, population[:, 0]]
         maximize = self.benchmark.maximise
         keep_running_until_timeup = self.keep_running_until_timeup
-        score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.benchmark)
+        score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.benchmark, self.filename)
 
         selection = lambda population, fitnesses: (
             Selection.selection(population, self.k, self.offspring_size, fitnesses))

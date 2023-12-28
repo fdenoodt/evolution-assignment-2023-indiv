@@ -197,3 +197,5 @@ cython_debug/
 *.exe
 *.out
 *.app
+*.png
+*.pdf

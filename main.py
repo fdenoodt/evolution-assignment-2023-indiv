@@ -2,7 +2,6 @@
 # The link was discussed in paper:
 # "A benchmark library and a comparison of heuristic  methods for the linear ordering problem"
 
-
 # 3.2 Individual phase (40h)
 # In the individual phase you continue from the code that you prepared in the group phase with your group.
 # From this point onwards, the project is an individual assignment. Cooperation is forbidden in this phase.
@@ -12,7 +11,7 @@
 # The Python code and final report should be turned in via Toledo by December 31, 2023 at 18:00 CET.
 
 
-import r0123456
+import r0698535
 import numpy as np
 
 # from benchmark_lolib import Benchmark
@@ -23,25 +22,26 @@ from plackett_luce_algorithm import PlackettLuceAlgorithm
 from graph_plotter import GraphPlotter
 
 
-def run_experiment(hyperparams, filename):
+def run_experiment(hyperparams, benchmark_filename, csv_filename):
     print("*******************************************************************")
     print("Running experiment with parameters:")
     print(hyperparams.__dict__)
 
     numIters = np.inf
-    benchmark = Benchmark(filename, normalize=False, maximise=False)
+    benchmark = Benchmark(benchmark_filename, normalize=False, maximise=False)
 
-    algorithm = EvolAlgorithm(benchmark, hyperparams)
-    a = r0123456.r0123456(algorithm, numIters)
+    algorithm = EvolAlgorithm(benchmark, hyperparams, csv_filename)
+    a = r0698535.r0698535(algorithm, numIters)
 
     try:
-        best_fitness = a.optimize()
+        # best_fitness = a.optimize()
+        best_fitness = 0
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         best_fitness = 0
     finally:
         # plot
-        GraphPlotter.read_file_and_make_graph("r0123456.csv")
+        GraphPlotter.read_file_and_make_graph(f"{csv_filename}.csv")
 
     return best_fitness
 
@@ -94,8 +94,8 @@ class HyperparamsPlackettLuceAlgorithm:
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    filename = "./tour750.csv"
-    # filename = "./benchmarks/be75eec.mat"
+    benchmark_filename = "./tour750.csv"
+    # benchmark_filename = "./benchmarks/be75eec.mat"
 
     # Set parameters
     hyperparams = HyperparamsEvolAlgorithm()
@@ -111,5 +111,16 @@ if __name__ == "__main__":
     # hyperparams.merge_after_percent_time_left = 0.5
     # hyperparams.fitness_sharing_subset_percentage = 0.05
     # hyperparams.alpha = 1
+    # hyperparams.local_search = "2-opt" & hyperparams.local_search_param = 1 together
 
-    run_experiment(hyperparams, filename)
+    # csv_filename is based on hyperparams and benchmark_filename
+    GraphPlotter.mkdir(f"./{benchmark_filename[:-4]}")
+    csv_filename = (f"./{benchmark_filename[:-4]}/popul_size={hyperparams.popul_size},"
+                    f"offsp_sz_multipl={hyperparams.offspring_size_multiplier},k={hyperparams.k},"
+                    f"mut_r={hyperparams.mutation_rate},nb_isl={hyperparams.nb_islands},"
+                    f"migr_aftr_ep={hyperparams.migrate_after_epochs},migr_perc={hyperparams.migration_percentage},"
+                    f"mrge_aftr_perc_time_left={hyperparams.merge_after_percent_time_left},"
+                    f"fit_shr_sbst_perc={hyperparams.fitness_sharing_subset_percentage},alph={hyperparams.alpha},"
+                    f"local_search={hyperparams.local_search},local_search_param={hyperparams.local_search_param}")
+
+    run_experiment(hyperparams, benchmark_filename, csv_filename)
