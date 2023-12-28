@@ -23,28 +23,15 @@ from plackett_luce_algorithm import PlackettLuceAlgorithm
 from graph_plotter import GraphPlotter
 
 
-def run_experiment():
+def run_experiment(hyperparams, filename):
     print("*******************************************************************")
     print("Running experiment with parameters:")
-
-    # lr, nb_samples_lambda, numIters, U
-    # lr = 0.9
-    nb_samples_lambda = 100
-    # numIters = 1_000_000
-    # U = PlackettLuce.U_identity
+    print(hyperparams.__dict__)
 
     numIters = np.inf
     benchmark = Benchmark(filename, normalize=False, maximise=False)
-    # pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
-    # pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
-    # algorithm = PlackettLuceAlgorithm(lr, nb_samples_lambda, U, benchmark, pdf)
 
-    algorithm = EvolAlgorithm(benchmark, popul_size=100,
-                              offspring_size_multiplier=1, k=10, mutation_rate=0.2, migrate_after_epochs=25,
-                              nb_islands=3, migration_percentage=0.05,
-                              fitness_sharing_subset_percentage=0.05,  # higher is more accurate, but slower
-                              alpha=1,
-                              keep_running_until_timeup=True)
+    algorithm = EvolAlgorithm(benchmark, hyperparams)
     a = r0123456.r0123456(algorithm, numIters)
 
     try:
@@ -59,6 +46,51 @@ def run_experiment():
     return best_fitness
 
 
+class HyperparamsEvolAlgorithm:
+    def __init__(self,
+                 popul_size=100,
+                 offspring_size_multiplier=1,
+                 k=3,
+                 mutation_rate=0.2,
+                 # Islands
+                 migrate_after_epochs=25, migration_percentage=0.05, merge_after_percent_time_left=0.5,
+                 fitness_sharing_subset_percentage=0.05,  # higher is more accurate, but slower
+                 alpha=1,  # used in fitness sharing
+                 keep_running_until_timeup=True):
+        self.popul_size = popul_size
+        self.offspring_size_multiplier = offspring_size_multiplier
+        self.k = k
+        self.mutation_rate = mutation_rate
+
+        self.nb_islands = 3  # Always fixed. one island per mutation function
+        self.migrate_after_epochs = migrate_after_epochs
+        self.migration_percentage = migration_percentage
+        self.merge_after_percent_time_left = merge_after_percent_time_left  # eg 0.75 will merge when 75% of time is left
+
+        self.fitness_sharing_subset_percentage = fitness_sharing_subset_percentage
+        self.alpha = alpha
+
+        self.local_search = "2-opt"  # None, "insert_random_node"
+        self.local_search_param = 1  # eg nb_nodes_to_insert_percent=0.1 for local_search="insert_random_node", jump_size=1 for local_search="2-opt"
+
+        self.keep_running_until_timeup = keep_running_until_timeup
+
+
+class HyperparamsPlackettLuceAlgorithm:
+    def __init__(self,
+                 lr=0.01,
+                 nb_samples_lambda=100,
+                 U=PlackettLuce.U_identity,
+                 keep_running_until_timeup=True):
+        self.lr = lr
+        self.nb_samples_lambda = nb_samples_lambda
+        self.U = U
+        self.keep_running_until_timeup = keep_running_until_timeup
+        # pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
+        # pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
+        # algorithm = PlackettLuceAlgorithm(lr, nb_samples_lambda, U, benchmark, pdf)
+
+
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
@@ -66,4 +98,18 @@ if __name__ == "__main__":
     # filename = "./benchmarks/be75eec.mat"
 
     # Set parameters
-    run_experiment()
+    hyperparams = HyperparamsEvolAlgorithm()
+
+    # Params are chosen based on impact on fitness, one at a time
+    # hyperparams.popul_size = 100
+    # hyperparams.offspring_size_multiplier = 1
+    # hyperparams.k = 3
+    # hyperparams.mutation_rate = 0.2
+    # hyperparams.nb_islands = 3, always fixed!
+    # hyperparams.migrate_after_epochs = 25
+    # hyperparams.migration_percentage = 0.05
+    # hyperparams.merge_after_percent_time_left = 0.5
+    # hyperparams.fitness_sharing_subset_percentage = 0.05
+    # hyperparams.alpha = 1
+
+    run_experiment(hyperparams, filename)

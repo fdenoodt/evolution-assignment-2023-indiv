@@ -112,8 +112,7 @@ class Island:
         # offspring = selected.copy() # no crossover
         self.mutation(offspring)
 
-        # TODO: when to merge should also be a hyper param
-        # TODO: local search as hyperparam w/ probabil!
+        # TODO: code based on hyperparam
         # offspring = LocalSearch.two_opt(offspring, score_tracker.benchmark.matrix, jump_size=1)
         offspring = LocalSearch.insert_random_node(offspring, score_tracker.benchmark.matrix, nb_nodes_to_insert_percent=0.1)
 

@@ -6,7 +6,7 @@ import time
 class Reporter:
     def __init__(self, filename):
         print("Reporter: " + filename)
-        self.allowedTime = 300  # 5 minutes
+        self.allowedTime = 10  # 5 minutes
         self.numIterations = 0
         self.filename = filename + ".csv"
         self.delimiter = ','

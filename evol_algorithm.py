@@ -12,24 +12,22 @@ from variation import Variation
 
 
 class EvolAlgorithm(AbstractAlgorithm):
-    def __init__(self, benchmark, popul_size=1000, offspring_size_multiplier=2, k=3, mutation_rate=0.05,
-                 migrate_after_epochs=25, nb_islands=5, migration_percentage=0.1, fitness_sharing_subset_percentage=0.1,
-                 alpha=1,
-                 keep_running_until_timeup=True):
+    def __init__(self, benchmark, hyperparams):
         self.benchmark = benchmark
         assert (benchmark.normalizing_constant == 1), \
             "Normalizing for EvolAlgorithm gives no benefits and should be disabled"
 
-        self.popul_size = popul_size
-        self.offspring_size = offspring_size_multiplier * popul_size
-        self.k = k  # Tournament selection
-        self.mutation_rate = mutation_rate
-        self.keep_running_until_timeup = keep_running_until_timeup
-        self.migrate_after_epochs = migrate_after_epochs
-        self.nb_islands = nb_islands
-        self.migration_percentage = migration_percentage
-        self.fitness_subset_percentage = fitness_sharing_subset_percentage
-        self.alpha_sharing = alpha  # 1
+        self.popul_size = hyperparams.popul_size
+        self.offspring_size = hyperparams.offspring_size_multiplier * self.popul_size
+        self.k = hyperparams.k
+        self.mutation_rate = hyperparams.mutation_rate
+        self.keep_running_until_timeup = hyperparams.keep_running_until_timeup
+        self.migrate_after_epochs = hyperparams.migrate_after_epochs
+        self.nb_islands = hyperparams.nb_islands
+        self.migration_percentage = hyperparams.migration_percentage
+        self.merge_after_percent_time_left = hyperparams.merge_after_percent_time_left
+        self.fitness_subset_percentage = hyperparams.fitness_sharing_subset_percentage
+        self.alpha_sharing = hyperparams.alpha
 
         super().__init__()
 
@@ -100,12 +98,11 @@ class EvolAlgorithm(AbstractAlgorithm):
                                                 selection, elimination, fitness_sharing,
                                                 score_tracker, ctr)
 
-
             # migrate
             Island.migrate(islands, self.popul_size, percentage=self.migration_percentage)
 
             # if half time left, merge islands
-            if time_left < 0.75 * score_tracker.utility.reporter.allowedTime and not has_merged:
+            if time_left < self.merge_after_percent_time_left * score_tracker.utility.reporter.allowedTime and not has_merged:
                 # Merge all islands into one and run for the remaining time, w/ edge crossover as it converges faster
                 print("*" * 20)
                 print("Merging islands")
