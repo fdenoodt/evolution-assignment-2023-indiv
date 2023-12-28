@@ -1,5 +1,5 @@
 import numpy as np
-from python_tsp.exact import solve_tsp_dynamic_programming
+from python_tsp.exact import solve_tsp_dynamic_programming # pip install python-tsp
 from python_tsp.heuristics import solve_tsp_simulated_annealing
 
 from abstract_benchmark import AbstractBenchmark

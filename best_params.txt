@@ -1,6 +1,4 @@
 
 
 
-*********./tour500.csv*********
-Best popul_size is 1000 with fitness 0
-Best offspring_size_multiplier is 1 with fitness 19299.621808235985
+*********./tour50.csv*********

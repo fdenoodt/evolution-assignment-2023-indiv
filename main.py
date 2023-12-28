@@ -142,12 +142,12 @@ def append_to_file(filename, text):
         f.write(text + "\n")
 
 
-def find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=100):
+def find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False):
     # Set parameters
     hyperparams = HyperparamsEvolAlgorithm()  # start with default params, and change one at a time
 
     test_params = {
-        "popul_size": [10, 100, 200, 500, 1000] if fixed_popul_size is None else [fixed_popul_size],
+        "popul_size": [10, 100, 200, 500, 1000] if not(fixed_popul_size) else [fixed_popul_size],
         "offspring_size_multiplier": [1, 2, 3],
         "k": [3, 5, 25],
         "mutation_rate": [0.05, 0.2, 0.4],
@@ -200,9 +200,9 @@ if __name__ == "__main__":
     clear_file("best_params.txt")
 
     for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
-        find_optimal_param_for_tsp(benchmark_filename)
+        find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False)
 
     # do same but fix popul_size=100
     for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
-        find_optimal_param_for_tsp(benchmark_filename)
+        find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=True)
 
