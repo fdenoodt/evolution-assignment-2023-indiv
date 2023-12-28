@@ -3,6 +3,7 @@
 from ScoreTracker import ScoreTracker
 from abstract_algorithm import AbstractAlgorithm
 from diversity import Island, FitnessSharing
+from local_search import LocalSearch
 from placket_luce import PlackettLuce
 
 import numpy as np
@@ -29,7 +30,10 @@ class EvolAlgorithm(AbstractAlgorithm):
         self.fitness_subset_percentage = hyperparams.fitness_sharing_subset_percentage
         self.alpha_sharing = hyperparams.alpha
 
-        self.filename = filename # used for saving the results
+        self.local_search = hyperparams.local_search
+        self.local_search_param = hyperparams.local_search_param
+
+        self.filename = filename  # used for saving the results
 
         super().__init__()
 
@@ -40,7 +44,8 @@ class EvolAlgorithm(AbstractAlgorithm):
         f = lambda population: self.benchmark.compute_fitness(population) + self.benchmark.matrix[0, population[:, 0]]
         maximize = self.benchmark.maximise
         keep_running_until_timeup = self.keep_running_until_timeup
-        score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.benchmark, self.filename)
+        score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.benchmark,
+                                     self.filename)
 
         selection = lambda population, fitnesses: (
             Selection.selection(population, self.k, self.offspring_size, fitnesses))
@@ -51,6 +56,28 @@ class EvolAlgorithm(AbstractAlgorithm):
             self.fitness_subset_percentage,
             self.alpha_sharing)
 
+        # local search
+        assert (self.local_search in [None, "2-opt", "insert_random_node"]), "Invalid local search"
+        if self.local_search == "2-opt":
+            # assert whole number >= 1
+            assert (self.local_search_param >= 1) and (self.local_search_param % 1 == 0), \
+                "Invalid local search param for 2-opt"
+
+            jump_size = self.local_search_param
+            local_search = lambda offspring: LocalSearch.two_opt(offspring,
+                                                                 score_tracker.benchmark.matrix,
+                                                                 jump_size=jump_size)
+        elif self.local_search == "insert_random_node":
+            # assert 0 <= param <= 1
+            assert (0 <= self.local_search_param <= 1), "Invalid local search param for insert_random_node"
+
+            nb_nodes_to_insert_percent = self.local_search_param
+            local_search = lambda offspring: LocalSearch.insert_random_node(offspring,
+                                                                            score_tracker.benchmark.matrix,
+                                                                            nb_nodes_to_insert_percent=nb_nodes_to_insert_percent)
+        else:
+            local_search = lambda offspring: offspring  # do nothing
+
         # Ensure that we have a pair of every mutation and crossover combination
         mutation_functions = [
             lambda offspring: Variation.swap_mutation(offspring, self.mutation_rate),
@@ -58,6 +85,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             lambda offspring: Variation.scramble_mutation(offspring, self.mutation_rate),
         ]
 
+        # didn't result in good performance
         # crossover_functions = [
         #     lambda selected: Variation.crossover(selected),
         #     lambda selected: Variation.order_crossover(selected),
@@ -98,6 +126,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         while not (done):
             done, time_left = Island.run_epochs(self.migrate_after_epochs, islands,
                                                 selection, elimination, fitness_sharing,
+                                                local_search,
                                                 score_tracker, ctr)
 
             # migrate

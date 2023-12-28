@@ -40,13 +40,13 @@ class Island:
         return population
 
     @staticmethod
-    def run_epochs(nb_epochs, islands, selection, elimination, fitness_sharing, score_tracker, ctr):
+    def run_epochs(nb_epochs, islands, selection, elimination, fitness_sharing, local_search, score_tracker, ctr):
         # done_and_time_left = np.zeros((len(islands), ), dtype=bool)  # done for each island
         done_and_time_left = np.zeros((len(islands), 2), dtype=np.float64)  # done for each island
 
         done_and_time_left = [
             np.array(island._run_epoch(done_and_time_left[idx, 0], nb_epochs, idx, island, selection, elimination,
-                                       fitness_sharing, score_tracker,
+                                       fitness_sharing, local_search, score_tracker,
                                        ctr))
             for idx, island in enumerate(islands)]
 
@@ -55,7 +55,8 @@ class Island:
         time_left = last_elt[1]
         return done, time_left
 
-    def _run_epoch(self, done, nb_epochs, island_idx, island, selection, elimination, fitness_sharing, score_tracker,
+    def _run_epoch(self, done, nb_epochs, island_idx, island, selection, elimination, fitness_sharing, local_search,
+                   score_tracker,
                    ctr):
 
         # _run_epoch is called for epoch amount of times, could be that time was already over in previous epoch
@@ -70,7 +71,7 @@ class Island:
         for epoch in range(nb_epochs):
             # overwrites best_fitness, mean_fitness, sigma_best, but that's ok to me
             best_fitnesses[epoch], mean_fitnesses[epoch], best_sigma, last_fitnesses_shared = island.step(
-                selection, elimination, fitness_sharing, score_tracker, epoch + ctr)
+                selection, elimination, fitness_sharing, local_search, score_tracker, epoch + ctr)
 
             if epoch == nb_epochs - 1:  # only print results for last epoch of each island
                 Utility.print_score((ctr * nb_epochs) + epoch, best_fitnesses[epoch], np.mean(mean_fitnesses), 1,
@@ -87,7 +88,7 @@ class Island:
 
         return done, time_left
 
-    def step(self, selection, elimination, fitness_sharing, score_tracker, ctr):
+    def step(self, selection, elimination, fitness_sharing, local_search, score_tracker, ctr):
         fitnesses = self.f(self.population)  # before fitness sharing
 
         # Fitness sharing (MUST COME AFTER score_tracker.update_scores)
@@ -112,9 +113,7 @@ class Island:
         # offspring = selected.copy() # no crossover
         self.mutation(offspring)
 
-        # TODO: code based on hyperparam
-        # offspring = LocalSearch.two_opt(offspring, score_tracker.benchmark.matrix, jump_size=1)
-        offspring = LocalSearch.insert_random_node(offspring, score_tracker.benchmark.matrix, nb_nodes_to_insert_percent=0.1)
+        offspring = local_search(offspring)
 
         joined_popul = np.vstack((offspring, self.population))  # old population should have been optimized before
 

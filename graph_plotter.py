@@ -43,7 +43,8 @@ class GraphPlotter:
             plt.savefig(filename + ".png")
             # tikzplotlib.save(filename + ".tex")
 
-        plt.show()
+        # plt.show()
+        plt.close() # close the figure, so it does not appear in the next graph
 
     @staticmethod
     def compare_best(x, ys, xticks, x_label, y_label, title, filename=None):

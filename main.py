@@ -34,8 +34,8 @@ def run_experiment(hyperparams, benchmark_filename, csv_filename):
     a = r0698535.r0698535(algorithm, numIters)
 
     try:
-        # best_fitness = a.optimize()
-        best_fitness = 0
+        best_fitness = a.optimize()
+        # best_fitness = 0
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         best_fitness = 0
