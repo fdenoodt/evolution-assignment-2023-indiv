@@ -107,7 +107,7 @@ class Island:
         # offspring = selected.copy() # no crossover
         self.mutation(offspring)
 
-        offspring = LocalSearch.local_search(offspring, fitnesses_shared, benchmark)
+        offspring = LocalSearch.two_opt(offspring, score_tracker.benchmark.matrix, jump_size=5)
 
         joined_popul = np.vstack((offspring, self.population)) #  old population should have been optimized before
 
