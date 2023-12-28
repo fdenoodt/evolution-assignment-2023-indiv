@@ -60,4 +60,4 @@ class Utility:
         timeLeft = self.reporter.report(meanObjective, bestObjective, bestSolution, write_to_file)
         time_over = (timeLeft < 0 and self.keep_running_until_timeup)
         iters_over = i > self.numIters
-        return (time_over or iters_over)
+        return (time_over or iters_over), timeLeft

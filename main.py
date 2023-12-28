@@ -40,10 +40,10 @@ def run_experiment():
     # algorithm = PlackettLuceAlgorithm(lr, nb_samples_lambda, U, benchmark, pdf)
 
     algorithm = EvolAlgorithm(benchmark, popul_size=100,
-                              offspring_size_multiplier=1, k=10, mutation_rate=0, migrate_after_epochs=25,
-                              nb_islands=1, migration_percentage=0.05,
+                              offspring_size_multiplier=1, k=10, mutation_rate=0.2, migrate_after_epochs=25,
+                              nb_islands=3, migration_percentage=0.05,
                               fitness_sharing_subset_percentage=0.05,  # higher is more accurate, but slower
-                              alpha=1, #
+                              alpha=1,
                               keep_running_until_timeup=True)
     a = r0123456.r0123456(algorithm, numIters)
 
@@ -62,7 +62,7 @@ def run_experiment():
 if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
-    filename = "./tour50.csv"
+    filename = "./tour750.csv"
     # filename = "./benchmarks/be75eec.mat"
 
     # Set parameters

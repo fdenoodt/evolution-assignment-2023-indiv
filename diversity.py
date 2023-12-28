@@ -3,6 +3,7 @@ import numpy as np
 from ScoreTracker import ScoreTracker
 from benchmark_tsp import Benchmark
 from local_search import LocalSearch
+from selection import Selection
 from utility import Utility
 from variation import Variation
 
@@ -40,15 +41,19 @@ class Island:
 
     @staticmethod
     def run_epochs(nb_epochs, islands, selection, elimination, fitness_sharing, score_tracker, ctr):
-        done = np.zeros(len(islands), dtype=bool)  # done for each island
+        # done_and_time_left = np.zeros((len(islands), ), dtype=bool)  # done for each island
+        done_and_time_left = np.zeros((len(islands), 2), dtype=np.float64)  # done for each island
 
-        done = [
-            island._run_epoch(done[idx], nb_epochs, idx, island, selection, elimination, fitness_sharing, score_tracker,
-                              ctr)
+        done_and_time_left = [
+            np.array(island._run_epoch(done_and_time_left[idx, 0], nb_epochs, idx, island, selection, elimination,
+                                       fitness_sharing, score_tracker,
+                                       ctr))
             for idx, island in enumerate(islands)]
 
-        # shouldn't happen that one island is done and another is not
-        return np.any(done)
+        last_elt = done_and_time_left[-1]
+        done = last_elt[0]
+        time_left = last_elt[1]
+        return done, time_left
 
     def _run_epoch(self, done, nb_epochs, island_idx, island, selection, elimination, fitness_sharing, score_tracker,
                    ctr):
@@ -74,13 +79,13 @@ class Island:
                                     island=island)
 
             write_to_file = True if island_idx == 0 else False  # only write to file for first island
-            if score_tracker.utility.is_done_and_report(
-                    (ctr * nb_epochs) + epoch, mean_fitnesses[epoch], best_fitnesses[epoch], best_sigma,
-                    write_to_file=write_to_file):
-                done = True
+            done, time_left = score_tracker.utility.is_done_and_report(
+                (ctr * nb_epochs) + epoch, mean_fitnesses[epoch], best_fitnesses[epoch], best_sigma,
+                write_to_file=write_to_file)
+            if done:
                 break
 
-        return done
+        return done, time_left
 
     def step(self, selection, elimination, fitness_sharing, score_tracker, ctr):
         fitnesses = self.f(self.population)  # before fitness sharing
@@ -107,10 +112,12 @@ class Island:
         # offspring = selected.copy() # no crossover
         self.mutation(offspring)
 
-        if ctr % 10 == 0:
-            offspring = LocalSearch.two_opt(offspring, score_tracker.benchmark.matrix, jump_size=1)
+        # TODO: when to merge should also be a hyper param
+        # TODO: local search as hyperparam w/ probabil!
+        # offspring = LocalSearch.two_opt(offspring, score_tracker.benchmark.matrix, jump_size=1)
+        offspring = LocalSearch.insert_random_node(offspring, score_tracker.benchmark.matrix, nb_nodes_to_insert_percent=0.1)
 
-        joined_popul = np.vstack((offspring, self.population)) #  old population should have been optimized before
+        joined_popul = np.vstack((offspring, self.population))  # old population should have been optimized before
 
         # Evaluation / elimination
         fitnesses = self.f(joined_popul)
@@ -151,6 +158,28 @@ class Island:
         np.random.shuffle(self.population)
 
         return our_migrants
+
+    @staticmethod
+    def merge_islands(islands, crossover, mutation):
+        assert len(islands) > 0
+
+        if len(islands) == 1:
+            return islands[0]
+
+        # Must select the best individuals from each island
+        entire_population = np.vstack([island.population for island in islands])
+        entire_fitnesses = np.hstack([island.f(island.population) for island in islands])
+        popul_size = islands[0].popul_size
+        population = Selection.elimination(entire_population, entire_fitnesses, 3, popul_size)
+        np.random.shuffle(population)
+
+        # create an island with the merged population
+        island = islands[0]
+        island.population = population
+        island.mutation = mutation
+        island.crossover = crossover
+
+        return island
 
 
 class FitnessSharing:

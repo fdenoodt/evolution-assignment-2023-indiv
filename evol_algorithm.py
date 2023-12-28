@@ -57,6 +57,7 @@ class EvolAlgorithm(AbstractAlgorithm):
             lambda offspring: Variation.inversion_mutation(offspring, self.mutation_rate),
             lambda offspring: Variation.scramble_mutation(offspring, self.mutation_rate),
         ]
+
         # crossover_functions = [
         #     lambda selected: Variation.crossover(selected),
         #     lambda selected: Variation.order_crossover(selected),
@@ -70,13 +71,13 @@ class EvolAlgorithm(AbstractAlgorithm):
         ]
 
         # set names of the lambda functions for easy printing
-        mutation_functions[0].__name__ = "swap_mutation"
-        mutation_functions[1].__name__ = "inversion_mutation"
-        mutation_functions[2].__name__ = "scramble_mutation"
+        mutation_functions[0].__name__ = "swap_mut"
+        mutation_functions[1].__name__ = "inversion_mut"
+        mutation_functions[2].__name__ = "scramble_mut"
 
-        # crossover_functions[0].__name__ = "edge_crossover"
-        # crossover_functions[1].__name__ = "order_crossover"
-        crossover_functions[0].__name__ = "edge_crossover_or_order_crossover"
+        # crossover_functions[0].__name__ = "edge_cross"
+        # crossover_functions[1].__name__ = "order_cross"
+        crossover_functions[0].__name__ = "edge/order_cross"
 
         # create a list of all possible combinations
         functions = np.array([
@@ -93,15 +94,28 @@ class EvolAlgorithm(AbstractAlgorithm):
 
         ctr = 0
         done = False
+        has_merged = False
         while not (done):
-            # run for a few epochs
-            # Time to run for a few epochs
-            done = Island.run_epochs(self.migrate_after_epochs, islands,
-                                     selection, elimination, fitness_sharing,
-                                     score_tracker, ctr)
+            done, time_left = Island.run_epochs(self.migrate_after_epochs, islands,
+                                                selection, elimination, fitness_sharing,
+                                                score_tracker, ctr)
+
 
             # migrate
             Island.migrate(islands, self.popul_size, percentage=self.migration_percentage)
+
+            # if half time left, merge islands
+            if time_left < 0.75 * score_tracker.utility.reporter.allowedTime and not has_merged:
+                # Merge all islands into one and run for the remaining time, w/ edge crossover as it converges faster
+                print("*" * 20)
+                print("Merging islands")
+                print()
+                crossover = Variation.edge_crossover
+                mutation = lambda offspring: Variation.scramble_mutation(offspring, self.mutation_rate)
+                mutation.__name__ = "scramble_mut"
+                island = Island.merge_islands(islands, crossover, mutation)
+                islands = [island]
+                has_merged = True
 
             ctr += 1
 

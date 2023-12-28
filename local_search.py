@@ -8,7 +8,7 @@ class LocalSearch:
     @staticmethod
     def insert_random_node(population, d, nb_nodes_to_insert_percent=0.1):
         nb_nodes_to_insert = int(np.size(population, 1) * nb_nodes_to_insert_percent)
-        print(f"inserting {nb_nodes_to_insert} nodes")
+        # print(f"inserting {nb_nodes_to_insert} nodes")
 
         if nb_nodes_to_insert == 0:
             return population
@@ -21,14 +21,6 @@ class LocalSearch:
         nb_cities = np.size(population, 1)
 
         for indiv_idx, indivd in enumerate(population):
-            # based on: https://dm865.github.io/assets/dm865-tsp-ls-handout.pdf
-
-            # pick two random nodes
-            # a_idx = np.random.randint(0, nb_cities - 1)
-            # b_idx = np.random.randint(0, nb_cities - 1)
-            # if a_idx == b_idx:
-            #     continue
-
             # pick `nb_nodes_to_insert` random nodes without replacement
             rnd_a_indices = np.random.choice(nb_cities, nb_nodes_to_insert, replace=False)
             rnd_b_indices = np.random.choice(nb_cities, nb_nodes_to_insert, replace=False)
@@ -54,7 +46,7 @@ class LocalSearch:
                 would_be_cost = d[a, b] + d[b, a_next] + d[b_prev, b_next]
 
                 if current_cost > would_be_cost:
-                    print(f"inserting node {b} after node {a} in individual {indiv_idx}")
+                    # print(f"inserting node {b} after node {a} in individual {indiv_idx}")
                     # insert node b after node a and shift all other nodes
                     indivd = np.insert(indivd, a_idx + 1, indivd[b_idx])
                     if a_idx < b_idx:
@@ -65,40 +57,6 @@ class LocalSearch:
                     population[indiv_idx] = indivd
 
         return population
-
-    # @staticmethod
-    # def reverse_two_nodes(population, d, nb_nodes_to_reverse_percent=0.1):
-    #     nb_nodes_to_reverse = int(np.size(population, 1) * nb_nodes_to_reverse_percent)
-    #     print(f"reversing {nb_nodes_to_reverse} nodes")
-    #
-    #     if nb_nodes_to_reverse == 0:
-    #         return population
-    #
-    #     # verify perm_len: otherwise we would be inserting the same node
-    #     max_perm_len = np.size(population, 1)
-    #     assert nb_nodes_to_reverse <= max_perm_len
-    #
-    #     population = population.copy()
-    #     nb_cities = np.size(population, 1)
-    #
-    #     for indiv_idx, indivd in enumerate(population):
-    #         # pick `nb_nodes_to_insert` random nodes without replacement
-    #         rnd_a_indices = np.random.choice(nb_cities, nb_nodes_to_reverse, replace=False)
-    #         rnd_b_indices = np.random.choice(nb_cities, nb_nodes_to_reverse, replace=False)
-    #
-    #         for a_idx, b_idx in zip(rnd_a_indices, rnd_b_indices):
-    #             if a_idx == b_idx:
-    #                 continue
-    #
-    #             # check if better performance
-    #             a = indivd[a_idx]
-    #             b = indivd[b_idx]
-    #             a_next = indivd[(a_idx + 1) % nb_cities]
-    #             b_next = indivd[(b_idx + 1) % nb_cities]
-    #
-    #             # ... a_prev -> a -> a_next -> ...
-    #             # ... b_prev -> b -> b_next -> ...
-    #             current_cost = d[a, a_next] + d[b, b_next]
 
     @staticmethod
     def two_opt_slow(population, d):
