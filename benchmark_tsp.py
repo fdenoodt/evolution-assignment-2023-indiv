@@ -16,7 +16,7 @@ class Benchmark(AbstractBenchmark):
             _matrix = Benchmark.replace_inf_with_large_val(_matrix)
 
         # TODO: remove
-        # _matrix = _matrix[:10, :10]
+        _matrix = _matrix[:10, :10]
 
         super().__init__(_matrix, normalize, maximise)
 

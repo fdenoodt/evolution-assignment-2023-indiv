@@ -124,7 +124,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         done = False
         has_merged = False
         while not (done):
-            done, time_left = Island.run_epochs(self.migrate_after_epochs, islands,
+            done, time_left, best_fitness = Island.run_epochs(self.migrate_after_epochs, islands,
                                                 selection, elimination, fitness_sharing,
                                                 local_search,
                                                 score_tracker, ctr)
@@ -147,7 +147,8 @@ class EvolAlgorithm(AbstractAlgorithm):
 
             ctr += 1
 
-        return score_tracker.all_time_best_fitness
+        #return score_tracker.all_time_best_fitness
+        return best_fitness
 
 
 if __name__ == "__main__":
