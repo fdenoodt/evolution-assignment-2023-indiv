@@ -108,10 +108,6 @@ def find_optimal_param(param_name, param_values, hyperparams, benchmark_filename
     best_fitness = np.inf
     best_param = None
     for param_value in param_values:
-        # hyperparams.popul_size = popul_size # not via string
-        # hyperparams['popul_size'] = popul_size
-        # via string:
-        # exec(f"hyperparams.popul_size = {popul_size}")
         try:
             exec(f"hyperparams.{param_name} = {param_value}")
 

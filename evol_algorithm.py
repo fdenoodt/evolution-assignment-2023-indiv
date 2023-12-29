@@ -123,6 +123,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         ctr = 0
         done = False
         has_merged = False
+        best_fitness = np.inf
         while not (done):
             done, time_left, best_fitness = Island.run_epochs(self.migrate_after_epochs, islands,
                                                 selection, elimination, fitness_sharing,

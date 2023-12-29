@@ -44,8 +44,9 @@ class Island:
         # done_and_time_left = np.zeros((len(islands), ), dtype=bool)  # done for each island
         done_and_time_left_and_best_score = np.zeros((len(islands), 3), dtype=np.float64)  # done for each island
 
-        done_and_time_left = [
-            np.array(island._run_epoch(done_and_time_left_and_best_score[idx, 0], nb_epochs, idx, island, selection, elimination,
+        done_and_time_left_and_best_score = [
+            np.array(island._run_epoch(done_and_time_left_and_best_score[idx, 0], nb_epochs, idx, island, selection,
+                                       elimination,
                                        fitness_sharing, local_search, score_tracker,
                                        ctr))
             for idx, island in enumerate(islands)]
@@ -87,7 +88,8 @@ class Island:
             if done:
                 break
 
-        return done, time_left, best_fitnesses[epoch] # I didn't dare -1, since if was asked to stop at eg 13, but 25 epochs...then would return 0
+        return done, time_left, best_fitnesses[
+            epoch]  # I didn't dare -1, since if was asked to stop at eg 13, but 25 epochs...then would return 0
 
     def step(self, selection, elimination, fitness_sharing, local_search, score_tracker, ctr):
         fitnesses = self.f(self.population)  # before fitness sharing
