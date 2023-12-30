@@ -174,10 +174,7 @@ def find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False):
         append_to_file("best_params.txt", f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
 
 
-def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duration=15): # duration in seconds
-    # only for 50 tours
-    assert benchmark_filename == "./tour50.csv"
-
+def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duration=15, bar_chart=False): # duration in seconds
     print("*******************************************************************")
     print("Running experiment with parameters:")
     print(hyperparams.__dict__)
@@ -203,8 +200,12 @@ def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duratio
             GraphPlotter.read_file_and_make_graph(f"{csv_filename}.csv")
             pass
 
-    # after the nb_repeats, make a bar graph
-    GraphPlotter.make_bar_graph(f"./BARS/50_tours", nb_repeats)
+
+    if bar_chart:
+        # only for 50 tours
+        assert benchmark_filename == "./tour50.csv"
+        # after the nb_repeats, make a bar graph
+        GraphPlotter.make_bar_graph(f"./BARS/50_tours", nb_repeats)
 
 
 
@@ -243,18 +244,7 @@ if __name__ == "__main__":
     benchmark_filename = "./tour50.csv"
     hyperparams = HyperparamsEvolAlgorithm()
 
-    # *****./tour50.csv*********
-    # Best popul_size is 100 with fitness 27381.955197858802
-    # Best offspring_size_multiplier is 3 with fitness 26974.251541824528
-    # Best k is 3 with fitness 26031.545034139865
-    # Best mutation_rate is 0.4 with fitness 26997.9235746832
-    # Best migrate_after_epochs is 50 with fitness 27478.841328411843
-    # Best migration_percentage is 0.05 with fitness 26278.11898516824
-    # Best merge_after_percent_time_left is 0.5 with fitness 27046.968576194697
-    # Best fitness_sharing_subset_percentage is 0.05 with fitness 28164.532944651237
-    # Best alpha is 0.5 with fitness 27585.71226280139
-    # Best local_search is ('insert_random_node', 1) with fitness 25926.17765643146
-
+    # *****./tour50.csv********* BEST PARAMS *****
     hyperparams.popul_size = 50 #100
     hyperparams.offspring_size_multiplier = 1 #3
     hyperparams.k = 3
@@ -264,9 +254,35 @@ if __name__ == "__main__":
     hyperparams.merge_after_percent_time_left = 0.5
     hyperparams.fitness_sharing_subset_percentage = 0.05
     hyperparams.alpha = 1 # 0.5
-    # hyperparams.local_search = ("insert_random_node", 1)
     hyperparams.local_search = ("2-opt", 1)
+    # repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=20)
 
-    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=500, max_duration=20)
+
+    # *****./tour750.csv********* BEST PARAMS *****
+    # Best popul_size is 50 with fitness 1148867.0279284255
+    # Best offspring_size_multiplier is 1 with fitness 1105014.2817373257
+    # Best k is 25 with fitness 1045954.3036837422
+    # Best mutation_rate is 0.2 with fitness 1021092.7878346049
+    # Best migrate_after_epochs is 25 with fitness 1025055.3904581552
+    # Best migration_percentage is 0.05 with fitness 973823.8061889696
+    # Best merge_after_percent_time_left is 0.9 with fitness 869192.7238859639
+    # Best fitness_sharing_subset_percentage is 0.05 with fitness 864282.7763224349
+    # Best alpha is 0.5 with fitness 844913.9073065103
+    # Best local_search is ('insert_random_node', 0.5) with fitness 359414.84281839547
+
+    benchmark_filename = "./tour750.csv"
+    hyperparams = HyperparamsEvolAlgorithm()
+    hyperparams.popul_size = 50
+    hyperparams.offspring_size_multiplier = 1
+    hyperparams.k = 25 # strange ...
+    hyperparams.mutation_rate = 0.2
+    hyperparams.migrate_after_epochs = 25
+    hyperparams.migration_percentage = 0.05
+    hyperparams.merge_after_percent_time_left = 0.5
+    hyperparams.fitness_sharing_subset_percentage = 0.05
+    hyperparams.alpha = 1
+    hyperparams.local_search = ("insert_random_node", 0.5)
+
+    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=None)
 
 
