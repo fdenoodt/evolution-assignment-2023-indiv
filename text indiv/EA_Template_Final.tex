@@ -113,9 +113,12 @@
 	
 \end{enumerate}
 
+	\textcolor{red}{
+		We have made a slight change to the structure of the report. Section \ref{cha:final_design} remains the final design of the algorithm. Here we only discuss the genetic algorithm, which is based on the group project. A new section is added where we discuss the PL-GS algorithm. The performance of the algorithm is underwhelming and, therefore, not part of the final algorithm used for the performance evaluation of this course.
+	}
 
 
-\section{Final design of the evolutionary algorithm (target: $3.5$ pages)} 
+\section{Final design of the evolutionary algorithm (target: $3.5$ pages)} \label{cha:final_design}
 %\RemoveMe{\textbf{Goal:} Based on this section, we will evaluate insofar as you are able to design and implement an advanced, effective evolutionary algorithm for solving a model problem.}
 
 
@@ -277,7 +280,7 @@
 
 		\item \textbf{PL-GS:} \\
 		\textbf{Motivation:} the algorithm, although initially introduced as a standalone evolutionary algorithm by \citeauthor{santucci_gradient_2020}, could in theory also be used as local search operator for a single $\sigma$. By default PL-GS results in finding a pdf $p_\mathbf{w}(\cdot)$ where sampling from it should give us a $\sigma$ for which $f(\sigma)$ is good. If we start the algorithm, not from the uniform categorical distribution $p_\mathbf{w}(\cdot)$, but instead define $\mathbf{w}$ s.t. $p_\mathbf{w}(\cdot)$ is high for $\sigma$ and low for other routes, applying the PL-GS algorithm for a few steps, would result in similar samples to $\sigma$ which are hopefully better. \\
-		Implementation-wise, given $\sigma = \left( \sigma(1), \sigma(2), \sigma(3),~\dots,~\sigma(n) \right)$, then $p_\mathbf{w}(\cdot)$ can be initialized by defining $\mathbf{w}_{\sigma(1)} = 1,~\mathbf{w}_{\sigma(2)} = \frac{1}{2},~\dots,~\mathbf{w}_{\sigma(n)} = \frac{1}{n}$, where $\mathbf{w}_i$ refers to the $i$'th component in the vector $\mathbf{w}$. Although the idea seems appealing in theory, the PL-GS converges slowly, and a simple two-opt procedure obtains better results in a shorter duration.
+		Implementation-wise, given $\sigma = \left( \sigma(1), \sigma(2), \sigma(3),~\dots,~\sigma(n) \right)$, then $p_\mathbf{w}(\cdot)$ can be initialized by defining $\mathbf{w}_{\sigma(1)} = 1,~\mathbf{w}_{\sigma(2)} = \frac{1}{2},~\dots,~\mathbf{w}_{\sigma(n)} = \frac{1}{n}$, where $\mathbf{w}_i$ refers to the $i$'th component in the vector $\mathbf{w}$. Although the idea seems appealingin theory, our preliminary tests have shown that the PL-GS converges slowly, and a simple two-opt procedure obtains better results in a shorter duration. We therefore do not consider it as part of the final algorithm.
 	\end{enumerate}
 	A single local search operator and its respective tuning parameters are predetermined dependent on the TSP problem.
 		
@@ -398,6 +401,12 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 %\ReplaceMe{Did you consider other items not listed above, such as elitism, multiobjective optimization strategies (e.g., island model, pareto front approximation), a parallel implementation, or other interesting computational optimizations (e.g. using advanced algorithms or data structures)? You can describe them here or add additional subsections as needed.}
 \textbf{TODO: discuss graphical algorithm}
 
+
+
+
+
+\section{Plackett-Luce Gradient Search - An advanced EDA scheme} \label{cha:pl-gs}
+	TODO
 
 \section{Numerical experiments (target: 1.5 pages)}
 	%\RemoveMe{\textbf{Goal:} Based on this section and our execution of your code, we will evaluate the performance (time, quality of solutions) of your implementation and your ability to interpret and explain the results on benchmark problems.}
