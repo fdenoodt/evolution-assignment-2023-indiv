@@ -258,7 +258,7 @@ if __name__ == "__main__":
     hyperparams.popul_size = 100
     hyperparams.offspring_size_multiplier = 3
     hyperparams.k = 3
-    hyperparams.mutation_rate = 0.4 # will try 0.05 as well
+    hyperparams.mutation_rate = 0.05 # will try 0.05 as well
     hyperparams.migrate_after_epochs = 50 # will try 25 as well
     hyperparams.migration_percentage = 0.05
     hyperparams.merge_after_percent_time_left = 0.5
@@ -266,6 +266,6 @@ if __name__ == "__main__":
     hyperparams.alpha = 0.5
     hyperparams.local_search = ("insert_random_node", 1)
 
-    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duration=15)
+    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=20, max_duration=15)
 
 
