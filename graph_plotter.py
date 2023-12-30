@@ -184,12 +184,15 @@ class GraphPlotter:
 
         fig, ax = plt.subplots()
         # set title
-        ax.set_title(f"Final mean/best fitnesses of {nb_repeats} runs")
+        ax.set_title(f"The final mean/best fitness for {nb_repeats} runs")
 
         ax.set_xlabel("Fitness")
         ax.set_ylabel("Frequency")
-        ax.hist(mean_fitnesses, bins=20)
-        ax.hist(best_fitnesses, bins=20, alpha=0.5)
+        bins = np.linspace(25_000, 38_000, 100)
+        ax.hist(best_fitnesses, bins=bins, alpha=0.5)
+        ax.hist(mean_fitnesses, bins=bins, alpha=0.5)
+        # ax.hist(mean_fitnesses, bins=20)
+        # ax.hist(best_fitnesses, bins=20)
 
 
         # plt.title(f"Final mean/best fitnesses of {nb_repeats} runs")
@@ -208,17 +211,21 @@ class GraphPlotter:
         #           transform=plt.gca().transAxes)
 
         textstr = '\n'.join((
-            r'$\mu~means=%.2f$' % (np.mean(mean_fitnesses),),
-            r'$\sigma~means=%.2f$' % (np.std(mean_fitnesses),),
-            r'$\mu~bests=%.2f$' % (np.mean(best_fitnesses),),
-            r'$\sigma~bests=%.2f$' % (np.std(best_fitnesses),)
+            r'$means=%.2f \pm %.2f$' % (np.mean(mean_fitnesses), np.std(mean_fitnesses),),
+            r'$bests=%.2f \pm %.2f$' % (np.mean(best_fitnesses), np.std(best_fitnesses),),
         ))
 
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
         # place a text box in upper left in axes coords
-        ax.text(0.55, 0.95, textstr, transform=ax.transAxes, fontsize=14,
+        ax.text(0.5, 0.95, textstr, transform=ax.transAxes, fontsize=12,
                 verticalalignment='top', bbox=props)
+        
+        # legend
+        # ax.legend(["Mean fitnesses", "Best fitnesses"])
+
+        # legend bottom right
+        ax.legend(["Mean fitnesses", "Best fitnesses"], loc='lower right')
 
 
 
@@ -230,7 +237,7 @@ class GraphPlotter:
 
 
 if __name__ == "__main__":
-    GraphPlotter.make_bar_graph("./BARS/50_tours/", 5)
+    GraphPlotter.make_bar_graph("./BARS/50_tours/", 500)
 
     # GraphPlotter.read_file_and_make_graph("r0123456.csv")
 
