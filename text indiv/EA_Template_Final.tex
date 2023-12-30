@@ -106,15 +106,15 @@
 	
 	\item \textbf{Plackett-Luce Gradient Search (PL-GS) model}: For this part, the base evolutionary algorithm is discarded and an algorithm based on gradient descent in the discrete domain (proposed by \citep{ceberiojosu_model-based_2023, santucci_gradient_2020}) is used instead. This part includes the following efforts:
 		\begin{enumerate}
-			\item Reproduce the results from their paper to their benchmark (includes writing entire source code, which was not publicly available)
+			\item Reproduce the results from their paper to their benchmark. This includes writing entire source code, which was not publicly available.
 			\item Apply the PL-GS model to the TSP problem.
-			\item Explore alternative representations to represent Probability Density Function (pdf) in PL-GS (based on Probabilistic Graphical Models).
+			\item Explore alternative representations to represent Probability Mass Function (pmf) in PL-GS (based on Probabilistic Graphical Models).
 		\end{enumerate}
 	
 \end{enumerate}
 
 	\textcolor{red}{
-		We have made a slight change to the structure of the report. Section \ref{cha:final_design} remains the final design of the algorithm. Here we only discuss the genetic algorithm, which is based on the group project. A new section is added where we discuss the PL-GS algorithm. The performance of the algorithm is underwhelming and, therefore, not part of the final algorithm used for the performance evaluation of this course.
+		We have made a modification to the structure of the report. Section \ref{cha:final_design} remains the final design of the algorithm. Here we only discuss the genetic algorithm, which is based on the group project. A new section (\ref{cha:pl-gs}) is added where we discuss the PL-GS algorithm. The performance of the algorithm is underwhelming and, therefore, not part of the final algorithm used for the performance evaluation of this course.
 	}
 
 
@@ -124,24 +124,16 @@
 
 \subsection{The three main features}
 	%\ReplaceMe{List the three main components of your evolutionary algorithm for this project. That is, what are its most distinctive characteristics, what components am I not allowed to change to a more basic version? Ideally these are some of the more advanced features that you added since \switch{the group phase}{your previous submission}.}
+
+	\begin{enumerate}
+	\item Order-crossover (only edge crossover is too exploitative, having a single child based on mutual edges from two parents resulted in too quick convergence to sub-optimal. Instead order-crossover obtains 2 children per two parents, which ensured that population didn't convergence to same path.)
+	\item Significant performance improvement through \textbf{local search} and \textbf{fitness sharing}.
+	\item Phase based convergence \\
+		- Encouraging diversity (due to multiple islands running in tandem and order-crossover creating larger populations) results in large computational costs, possibly hurting performance. Instead, we allow for an explorative scheme through multiple islands in the first phase (with migration and so on). In the second phase, islands merge to a single island, preserving only the candidate solutions that survive the elimination procedure. We also only run edge-crossover during this phase as it is a more greedy procedure, converging faster.
+	\end{enumerate}
 	
 	
-	\textbf{Genetic algorithm}
-		\begin{enumerate}
-		\item Order-crossover (only edge crossover is too exploitative, having a single child based on mutual edges from two parents resulted in too quick convergence to sub-optimal. Instead order-crossover obtains 2 children per two parents, which ensured that population didn't convergence to same path.)
-		\item Significant performance improvement through \textbf{local search} and \textbf{fitness sharing}.
-		\item Phase based convergence \\
-			- Encouraging diversity (due to multiple islands running in tandem and order-crossover creating larger populations) results in large computational costs, possibly hurting performance. Instead, we allow for an explorative scheme through multiple islands in the first phase (with migration and so on). In the second phase, islands merge to a single island, preserving only the candidate solutions that survive the elimination procedure. We also only run edge-crossover during this phase as it is a more greedy procedure, converging faster.
-		\end{enumerate}
-	
-	
-	\textbf{PL-GS:}
-		\begin{enumerate}
-		% \item \ReplaceMe{Just state the feature, you do not need to explain it, instead refer to the appropriate section below.}
-		 \item Each candidate solution $\sigma$ is samples from a distribution $p_\mathbf{w}$ where the parameters $\mathbf{w}$ are optimized.
-		 \item The parameters $\mathbf{w}$ are optimized through gradient gradient ascent. (Although the fitness function $f$ is not necessarily differentiable, though proper choice of a good representation for $p_\mathbf{w}$ will be w.r.t. $\mathbf{w}$)
-		 \item $p_\mathbf{w}$ is represented as categorical distribution based on the Plackett-Luce ranking model.
-		\end{enumerate}
+
 
 \subsection{The main loop}
 	%\ReplaceMe{Make a picture of the ``flow'' in your evolutionary algorithm, similar to the example below. Include all the main components (mutation, recombination, selection, elimination, initialization, local search operators, diversity promotion mechanisms). There are no formal requirements on how to do this, as long as it is clear and you can efficiently explain your complete evolutionary algorithm using this picture at the exam. Contrary to the picture below, include the specific techniques, e.g., top-$\lambda$ elimination, $k$-tournament selection, where possible.}
@@ -163,30 +155,8 @@
 		\caption{Overview of the Genetic algorithm.}
 		\label{fig:comparison}
 	\end{figure}
-	
-	
-	\textbf{PL-GS:} \textit{high-level view of the pseudo code:}
-		
-	\textbf{Objective:} Optimize $F(\mathbf{w}) = E_\mathbf{w}[f(x)] = \sum_{\sigma \in \mathbb{S}^n} f(\sigma) p_\mathbf{w}(\sigma)$
-	
-	\textbf{Initialization:} Define the uniform categorical distribution $p_\mathbf{w}(\sigma)$ s.t. $\forall~\sigma: p_\mathbf{w}(\sigma)=\frac{1}{|\mathbb{S}^n|}$
-	
-	\textbf{Repeat until convergence:}
-	\begin{enumerate}
-		\item Compute $\lambda$ samples: $\sigma^{(i)} \sim p_\mathbf{w}(\sigma)$.
-		\item Based on samples $\sigma^{(i)}$, calculate $\nabla_{\mathbf{w}} F\left(\mathbf{w}\right)$.
-		\item Update $\mathbf{w} \leftarrow \mathbf{w} - \eta \nabla F\left(\mathbf{w}\right)$.
-	\end{enumerate}
 
 	
-	
-	
-		
-	
-		
-	
-	
-	\RemoveMe{\textbf{The questions from \cref{sec_rep} to \cref{sec_oth} in blue are there to guide which topics to discuss}, rather than an exact list of questions that must be answered. Feel free to add more items to discuss.}
 
 \subsection{Representation}\label{sec_rep}
 	%\ReplaceMe{How do you represent the candidate solutions? What is your motivation to choose this one? What other options did you consider? How did you implement this specifically in Python (e.g., a list, set, numpy array, etc)?}
@@ -255,7 +225,7 @@
 	Based on these findings, we apply the following scheme:
 	\begin{enumerate}
 		\item Phase 1) All three islands have 80\% of applying order crossover (for diversity) and 20\% of edge crossover (for exploitation). Order crossover creates twice the number of offsprings than edge crossover, but the elimination procedure then reduces the offspring population to the required population size.
-		\item Phase 2, the objective is now to obtain a single and optimal candidate. Hence in phase 2) edge crossover is constantly applied.
+		\item Phase 2) The objective is now to obtain a single and optimal candidate. Hence in phase 2) edge crossover is constantly applied.
 	\end{enumerate}
 
 
@@ -279,7 +249,7 @@
 		\textbf{Explanation:} Given a permutation $\sigma$, this procedure considers a subset of random node pairs $\left(a = \sigma(i), b = \sigma(j)\right)$ with $i \neq j$. For each pair, the procedure verifies if inserting $b$ just in front $a$ results in a better fitness (this can be calculated in constant time, not linear), and if performance is improved, the node is inserted, resulting in the original nodes $\sigma(i+1) \dots \sigma(j-1)$ to be moved one step to the right. The subset size is a parameter determined upfront.
 
 		\item \textbf{PL-GS:} \\
-		\textbf{Motivation:} the algorithm, although initially introduced as a standalone evolutionary algorithm by \citeauthor{santucci_gradient_2020}, could in theory also be used as local search operator for a single $\sigma$. By default PL-GS results in finding a pdf $p_\mathbf{w}(\cdot)$ where sampling from it should give us a $\sigma$ for which $f(\sigma)$ is good. If we start the algorithm, not from the uniform categorical distribution $p_\mathbf{w}(\cdot)$, but instead define $\mathbf{w}$ s.t. $p_\mathbf{w}(\cdot)$ is high for $\sigma$ and low for other routes, applying the PL-GS algorithm for a few steps, would result in similar samples to $\sigma$ which are hopefully better. \\
+		\textbf{Motivation:} the algorithm (discussed in section \ref{cha:pl-gs}), although initially introduced as a standalone evolutionary algorithm by \citeauthor{santucci_gradient_2020}, could in theory also be used as local search operator for a single $\sigma$. By default PL-GS results in finding a pmf $p_\mathbf{w}(\cdot)$ where sampling from it should give us a $\sigma$ for which $f(\sigma)$ is good. If we start the algorithm, not from the uniform categorical distribution $p_\mathbf{w}(\cdot)$, but instead define $\mathbf{w}$ s.t. $p_\mathbf{w}(\cdot)$ is high for $\sigma$ and low for other routes, applying the PL-GS algorithm for a few steps, would result in similar samples to $\sigma$ which are hopefully better. \\
 		Implementation-wise, given $\sigma = \left( \sigma(1), \sigma(2), \sigma(3),~\dots,~\sigma(n) \right)$, then $p_\mathbf{w}(\cdot)$ can be initialized by defining $\mathbf{w}_{\sigma(1)} = 1,~\mathbf{w}_{\sigma(2)} = \frac{1}{2},~\dots,~\mathbf{w}_{\sigma(n)} = \frac{1}{n}$, where $\mathbf{w}_i$ refers to the $i$'th component in the vector $\mathbf{w}$. Although the idea seems appealingin theory, our preliminary tests have shown that the PL-GS converges slowly, and a simple two-opt procedure obtains better results in a shorter duration. We therefore do not consider it as part of the final algorithm.
 	\end{enumerate}
 	A single local search operator and its respective tuning parameters are predetermined dependent on the TSP problem.
@@ -324,7 +294,7 @@
 		g(\sigma^{(i)}) = f(\sigma^{(i)}) + \frac{1}{\lambda} \sum_{\substack{\sigma^{(j)}, \sigma^{(k)} \\ \in \{ \sigma^{(1)} \dots \sigma^{(\lambda)} \}}} d(\sigma^{(j)}, \sigma^{(k)})
 		$$
 		\item \textbf{Islands in tandem} \\
-		This procedure is not so trivial to adapt for the PL-GS algorithm. While multiple pdfs $p_\mathbf{w}(\cdot)$ could each be initialized randomly, the migration procedure is not so trivial. Migration the populations (in this case the $\lambda$ samples) would not be useful, as this would result in an incorrect gradient estimation $\nabla_{\mathbf{w}} F\left(\mathbf{w}\right)$, required for the update rule:
+		This procedure is not so trivial to adapt for the PL-GS algorithm. While multiple pmfs $p_\mathbf{w}(\cdot)$ could each be initialized randomly, the migration procedure is not so trivial. Migration the populations (in this case the $\lambda$ samples) would not be useful, as this would result in an incorrect gradient estimation $\nabla_{\mathbf{w}} F\left(\mathbf{w}\right)$, required for the update rule:
 		$$\mathbf{w} \leftarrow \mathbf{w} - \eta \nabla F\left(\mathbf{w}\right)$$.
 		
 		
@@ -406,7 +376,52 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 
 
 \section{Plackett-Luce Gradient Search - An advanced EDA scheme} \label{cha:pl-gs}
-	TODO
+	Estimation of Distribution (EDA) schemes replace standard variation operators, and instead consider a model (e.g.: a graphical model) of which samples are taken, evaluated, and based on these scores the model is adjusted to hopefully create better samples in the future. \textbf{TODO: REF BOOK}
+	
+	In this section, we explore such scheme based on \citeauthor{santucci_gradient_2020}'s gradient search algorithm, ``Plackett-Luce Gradient Search (PL-GS)".
+	
+	\subsection{Concise explanation of the algorithm}
+	The paper introduces a gradient based optimization scheme, applied to a discrete domain. In particular, to the space of permutations $\sigma \in \mathbb{S}^n$. 
+	Since $f : \mathbb{S}^n \rightarrow \mathbb{R}$ has a discrete domain, one cannot directly apply a gradient descent scheme to optimize $f$ as follows:
+	$$
+	\sigma \leftarrow \sigma + \eta \nabla f(\sigma)
+	$$
+	Indeed, $f$'s domain is discrete, and therefore, $\nabla f(\sigma)$ is not defined. Instead, the authors aim to optimize $f(\cdot)$ indirectly, based on the following objective function:
+	$$F(\mathbf{w}) = E_\mathbf{w}[f(\sigma)] = \sum_{\sigma \in \mathbb{S}^n} f(\sigma) p_\mathbf{w}(\sigma)$$
+	Here, $p_\mathbf{w}(\sigma)$ is a differentiable probability mass function with parameters $\mathbf{w}$. We will discuss its represention in section \textbf{TODO: ref}. Note that finding the parameters $\mathbf{w}$ for which $F(\mathbf{w})$ is optimal, will also result in samples $\sigma \sim p_\mathbf{w}(\sigma)$ for which $f(\sigma)$ is good.
+	
+	One can prove that the following statements hold true \citep{santucci_gradient_2020}:
+	%\nabla F_\mathbf{w}(\mathbf{w}) = E_\mathbf{w} \left[f(\sigma)\delta log\right]
+	\begin{align}
+	\nabla F_\mathbf{w}(\mathbf{w}) & = \sum_{\sigma \in \mathbb{S}^n} f(\sigma) \left[ \nabla_\mathbf{w} \log p_\mathbf{w}\right] p_\mathbf{w}(\sigma) = E_\mathbf{w} \left[f(\sigma) \nabla_\mathbf{w} \log p_\mathbf{w}(\sigma) \right] \\
+									& \approx \frac{1}{\lambda} \sum_{i=1}^{\lambda} f(\sigma^{(i)}) \nabla \log p_\mathbf{w}(\sigma^{(i)})
+	\end{align}
+	Equation 1) tells us that the gradient of $F$ can be computed, regardless of whether $f$ is differentiable or not. We merely require that that $p_\mathbf{w}$ is differentiable with respect to $\mathbf{w}$. Equation 2) shows how to approximate the $\nabla F_\mathbf{w}(\mathbf{w})$ based on $\lambda$ samples.
+	
+	
+	
+
+
+%
+%	3 main features: \\
+%	\begin{enumerate}
+%		% \item \ReplaceMe{Just state the feature, you do not need to explain it, instead refer to the appropriate section below.}
+%		\item Each candidate solution $\sigma$ is samples from a distribution $p_\mathbf{w}$ where the parameters $\mathbf{w}$ are optimized.
+%		\item The parameters $\mathbf{w}$ are optimized through gradient gradient ascent. (Although the fitness function $f$ is not necessarily differentiable, though proper choice of a good representation for $p_\mathbf{w}$ will be w.r.t. $\mathbf{w}$)
+%		\item $p_\mathbf{w}$ is represented as categorical distribution based on the Plackett-Luce ranking model.
+%	\end{enumerate}
+	
+	Based on the above details, we obtain the following algorithm to find $\sigma$ for which $f(\sigma)$ is good:\\
+	\textbf{PL-GS:} \textit{high-level view of the pseudo code:} \\
+	\textbf{Objective:} Optimize $F(\mathbf{w}) = E_\mathbf{w}[f(\sigma)] = \sum_{\sigma \in \mathbb{S}^n} f(\sigma) p_\mathbf{w}(\sigma)$ \\	
+	\textbf{Initialization:} Define the uniform categorical distribution $p_\mathbf{w}(\sigma)$ s.t. $\forall~\sigma: p_\mathbf{w}(\sigma)=\frac{1}{|\mathbb{S}^n|}$ \\	
+	\textbf{Repeat until convergence:}
+	\begin{enumerate}
+		\item Compute $\lambda$ samples: $\sigma^{(i)} \sim p_\mathbf{w}(\sigma)$.
+		\item Based on samples $\sigma^{(i)}$, calculate $\nabla_{\mathbf{w}} F\left(\mathbf{w}\right)$.
+		\item Update $\mathbf{w} \leftarrow \mathbf{w} - \eta \nabla F\left(\mathbf{w}\right)$.
+	\end{enumerate}
+	\textbf{Return $\sigma \sim p_\mathbf{w}(\sigma)$}.
 
 \section{Numerical experiments (target: 1.5 pages)}
 	%\RemoveMe{\textbf{Goal:} Based on this section and our execution of your code, we will evaluate the performance (time, quality of solutions) of your implementation and your ability to interpret and explain the results on benchmark problems.}
@@ -423,6 +438,9 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 		\item Memory 16GB
 		\item Python version 3.9
 	\end{enumerate}
+	
+	
+
 
 
 \subsection{tour50.csv}
@@ -434,6 +452,12 @@ What is the best tour length you found? What is the corresponding sequence of ci
 Interpret your results. How do you rate the performance of your algorithm (time, memory, speed of convergence, diversity of population, quality of the best solution, etc)? Is your solution close to the optimal one?
 
 \textbf{Solve this problem 500 times and record the results. Make a histogram of the final mean fitnessess and the final best fitnesses of the 500 runs. Comment on this figure: is there a lot of variability in the results, what are the means and the standard deviations?}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{mean_fitnesses}
+	\caption{500 runs applied to the 50 tour TSP. The averages and standard deviations are displayed in the top right corner.}
+	\label{fig:meanfitnesses}
+\end{figure}
 
 	
 \begin{table}[ht]
