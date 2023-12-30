@@ -426,45 +426,25 @@ Interpret your results. How do you rate the performance of your algorithm (time,
 
 \textbf{Solve this problem 500 times and record the results. Make a histogram of the final mean fitnessess and the final best fitnesses of the 500 runs. Comment on this figure: is there a lot of variability in the results, what are the means and the standard deviations?}
 
+	
 \begin{table}[ht]
 	\centering
-	\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+	\begin{tabular}{|c|c|c|c|c|c|c|c|}
 		\hline
-		\textbf{Reporter} & \textbf{Phase} & \textbf{Island} & \textbf{Iteration} & \textbf{Best Fitness} & \textbf{Avg Fitness} & \textbf{Fit Shared} & \textbf{Avg Dist} & \textbf{Details} \\
+		\textbf{Phase} & \textbf{Island} & \textbf{Iteration} & \textbf{Best Fitness} & \textbf{Avg Fitness} & \textbf{Fit Shared} & \textbf{Avg Dist} & \textbf{Mutation} \\
 		\hline
-		\multirow{3}{*}{r0698535} & \multirow{3}{*}{1, half of the time} & 0 & 24 & 27,025.1480 & 146,528.2943 & 59,479.3537 & 46.8571 & [edge/order cross inversion mut] \\
-		& & 1 & 24 & 26,792.7983 & 126,835.9942 & 66,089.5911 & 46.5714 & [edge/order cross swap mut] \\
-		& & 2 & 24 & 26,736.3022 & 124,162.9125 & 122,564.1697 & 46.4694 & [edge/order cross scramble mut] \\
+		\multirow{3}{*}{1} & 0 & 24 & 27025.15 & 146528.29 & 59479.35 & 46.86 & Inversion\\
+		& 1 & 24 & 26792.80 & 126835.99 & 66089.59 & 46.57 & Swap \\
+		& 2 & 24 & 26736.30 & 124162.91 & 122564.17 & 46.47 & Scramble\\
 		\hline
-		\multirow{4}{*}{r0698535} & \multirow{4}{*}{2, Merging islands} & 0 & 49 & 25,957.3589 & 26,759.9233 & 1,066,930.2562 & 0.6939 & [edge crossover scramble mut] \\
-		& & 0 & 74 & 25,957.3589 & 26,020.7547 & 981,034.9986 & 1.0204 & [edge crossover scramble mut] \\
-		& & 0 & 99 & 25,981.8399 & 25,981.8237 & 1,065,255.4379 & 0.0000 & [edge crossover scramble mut] \\
-		& & 0 & 124 & 25,981.8399 & 25,981.8399 & 1,065,255.4379 & 0.0000 & [edge crossover scramble mut] \\
+		\multirow{4}{*}{2} & NA & 49 & 25957.36 & 26759.92 & 1066930.26 & 0.69 & Scramble\\
+		& NA & 74 & 25957.36 & 26020.75 & 981034.99 & 1.02 & Scramble \\
+		& NA & 99 & 25981.84 & 25981.82 & 1065255.44 & 0.00 & Scramble\\
+		& NA & 124 & 25981.84 & 25981.84 & 1065255.44 & 0.00 & Scramble\\
 		\hline
 	\end{tabular}
-	\caption{Reported Data}
+	\caption{Example run on the 50 tours TSP problem, 20 seconds. Both phases run for 10 seconds each.}
 \end{table}
-
-	
-	\begin{table}[ht]
-		\centering
-		\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
-			\hline
-			\textbf{Reporter} & \textbf{Phase} & \textbf{Island} & \textbf{Iteration} & \textbf{Best Fitness} & \textbf{Avg Fitness} & \textbf{Fit Shared} & \textbf{Avg Dist} & \textbf{Details} \\
-			\hline
-			\multirow{3}{*}{r0698535} & \multirow{3}{*}{1, half of the time} & 0 & 24 & 27025.15 & 146528.29 & 59479.35 & 46.86 & [edge/order cross inversion mut] \\
-			& & 1 & 24 & 26792.80 & 126835.99 & 66089.59 & 46.57 & [edge/order cross swap mut] \\
-			& & 2 & 24 & 26736.30 & 124162.91 & 122564.17 & 46.47 & [edge/order cross scramble mut] \\
-			\hline
-			\multirow{4}{*}{r0698535} & \multirow{4}{*}{2, Merging islands} & 0 & 49 & 25957.36 & 26759.92 & 1066930.26 & 0.69 & [edge crossover scramble mut] \\
-			& & 0 & 74 & 25957.36 & 26020.75 & 981034.99 & 1.02 & [edge crossover scramble mut] \\
-			& & 0 & 99 & 25981.84 & 25981.82 & 1065255.44 & 0.00 & [edge crossover scramble mut] \\
-			& & 0 & 124 & 25981.84 & 25981.84 & 1065255.44 & 0.00 & [edge crossover scramble mut] \\
-			\hline
-		\end{tabular}
-		\caption{Reported Data}
-	\end{table}
-	
 	
 	
 
