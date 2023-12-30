@@ -200,7 +200,7 @@ def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duratio
             print("KeyboardInterrupt")
             best_fitness = 0
         finally:
-            # plot GraphPlotter.read_file_and_make_graph(f"{csv_filename}.csv")
+            GraphPlotter.read_file_and_make_graph(f"{csv_filename}.csv")
             pass
 
     # after the nb_repeats, make a bar graph
@@ -255,17 +255,18 @@ if __name__ == "__main__":
     # Best alpha is 0.5 with fitness 27585.71226280139
     # Best local_search is ('insert_random_node', 1) with fitness 25926.17765643146
 
-    hyperparams.popul_size = 100
-    hyperparams.offspring_size_multiplier = 3
+    hyperparams.popul_size = 50 #100
+    hyperparams.offspring_size_multiplier = 1 #3
     hyperparams.k = 3
-    hyperparams.mutation_rate = 0.05 # will try 0.05 as well
-    hyperparams.migrate_after_epochs = 50 # will try 25 as well
+    hyperparams.mutation_rate = 0.1 #0.05 # will try 0.05 as well
+    hyperparams.migrate_after_epochs = 25 #50 # will try 25 as well
     hyperparams.migration_percentage = 0.05
     hyperparams.merge_after_percent_time_left = 0.5
     hyperparams.fitness_sharing_subset_percentage = 0.05
-    hyperparams.alpha = 0.5
-    hyperparams.local_search = ("insert_random_node", 1)
+    hyperparams.alpha = 1 # 0.5
+    # hyperparams.local_search = ("insert_random_node", 1)
+    hyperparams.local_search = ("2-opt", 1)
 
-    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=20, max_duration=15)
+    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=500, max_duration=20)
 
 
