@@ -459,6 +459,25 @@ Interpret your results. How do you rate the performance of your algorithm (time,
 	\label{fig:meanfitnesses}
 \end{figure}
 
+Params:
+%    hyperparams.popul_size = 50 #100
+%	hyperparams.offspring_size_multiplier = 1 #3
+%	hyperparams.k = 3
+%	hyperparams.mutation_rate = 0.1 #0.05 # will try 0.05 as well
+%	hyperparams.migrate_after_epochs = 25 #50 # will try 25 as well
+%	hyperparams.migration_percentage = 0.05
+%	hyperparams.merge_after_percent_time_left = 0.5
+%	hyperparams.fitness_sharing_subset_percentage = 0.05
+%	hyperparams.alpha = 1 # 0.5
+%	# hyperparams.local_search = ("insert_random_node", 1)
+%	hyperparams.local_search = ("2-opt", 1)
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{tour_50_csv_mean_objective_value}
+	\caption{20 seconds, first 10\% of iterations is skipped. Results from a single island are shown. time is a bit weird to interpret. first half is 3 times slower due to 3 islands.}
+	\label{fig:tour50csvmeanobjectivevalue}
+\end{figure}
+
 	
 \begin{table}[ht]
 	\centering
@@ -495,6 +514,27 @@ Interpret your results. How do you rate the performance of your algorithm (time,
 \subsection{tour500.csv}
 
 \ReplaceMe{Answer the same questions as in \cref{sec_shorttour}.}
+
+\subsection{tour750.csv}
+param k strange.
+%hyperparams = HyperparamsEvolAlgorithm()
+%hyperparams.popul_size = 50
+%hyperparams.offspring_size_multiplier = 1
+%hyperparams.k = 25 # strange ...
+%hyperparams.mutation_rate = 0.2
+%hyperparams.migrate_after_epochs = 25
+%hyperparams.migration_percentage = 0.05
+%hyperparams.merge_after_percent_time_left = 0.5
+%hyperparams.fitness_sharing_subset_percentage = 0.05
+%hyperparams.alpha = 1
+%hyperparams.local_search = ("insert_random_node", 0.5)
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{tour_750}
+	\caption{}
+	\label{fig:tour750}
+\end{figure}
+
 
 \subsection{tour1000.csv}
 
