@@ -37,7 +37,7 @@ class EvolAlgorithm(AbstractAlgorithm):
 
         super().__init__()
 
-    def optimize(self, numIters, reporter_name, *args):
+    def optimize(self, numIters, reporter_name, max_duration=None, *args):
         n = self.benchmark.permutation_size()
 
         # since zero is implicit, we need to the edge from 0 to first node
@@ -45,7 +45,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         maximize = self.benchmark.maximise
         keep_running_until_timeup = self.keep_running_until_timeup
         score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.benchmark,
-                                     self.filename)
+                                     self.filename, max_duration=max_duration)
 
         selection = lambda population, fitnesses: (
             Selection.selection(population, self.k, self.offspring_size, fitnesses))

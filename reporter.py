@@ -4,9 +4,10 @@ import time
 
 # Class to report basic results of an evolutionary algorithm
 class Reporter:
-    def __init__(self, filename, second_filename=None):
+    def __init__(self, filename, second_filename=None, max_duration=None):
         print("Reporter: " + filename)
-        self.allowedTime = 300 #5 minutes
+        # self.allowedTime = 300 #5 minutes
+        self.allowedTime = max_duration if max_duration is not None else 300
         self.numIterations = 0
         self.filename = filename + ".csv"
         self.second_filename = second_filename + ".csv" if second_filename is not None else None

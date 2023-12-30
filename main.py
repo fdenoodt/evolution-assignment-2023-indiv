@@ -143,7 +143,7 @@ def find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False):
     hyperparams = HyperparamsEvolAlgorithm()  # start with default params, and change one at a time
 
     test_params = {
-        "popul_size": [10, 100, 200, 500, 1000] if not(fixed_popul_size) else [fixed_popul_size],
+        "popul_size": [10, 100, 200, 500, 1000] if not (fixed_popul_size) else [fixed_popul_size],
         "offspring_size_multiplier": [1, 2, 3],
         "k": [3, 5, 25],
         "mutation_rate": [0.05, 0.2, 0.4],
@@ -174,6 +174,43 @@ def find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False):
         append_to_file("best_params.txt", f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
 
 
+def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duration=15): # duration in seconds
+    # only for 50 tours
+    assert benchmark_filename == "./tour50.csv"
+
+    print("*******************************************************************")
+    print("Running experiment with parameters:")
+    print(hyperparams.__dict__)
+
+    for i in range(nb_repeats):
+        # csv_filename is based on hyperparams and benchmark_filename
+        GraphPlotter.mkdir(f"./BARS/50_tours/")
+        csv_filename = (f"./BARS/50_tours/iter={i}")
+
+        numIters = np.inf
+        benchmark = Benchmark(benchmark_filename, normalize=False, maximise=False)
+
+        algorithm = EvolAlgorithm(benchmark, hyperparams, csv_filename)
+        a = r0698535.r0698535(algorithm, numIters, max_duration=max_duration)
+
+        try:
+            best_fitness = a.optimize()
+            # best_fitness = 0
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt")
+            best_fitness = 0
+        finally:
+            # plot GraphPlotter.read_file_and_make_graph(f"{csv_filename}.csv")
+            pass
+
+    # after the nb_repeats, make a bar graph
+    GraphPlotter.make_bar_graph(f"./BARS/50_tours", nb_repeats)
+
+
+
+
+
+
 if __name__ == "__main__":
     # benchmark_filename = "./benchmarks/be75eec.mat"
 
@@ -193,12 +230,42 @@ if __name__ == "__main__":
     seed = 123456
     np.random.seed(seed)
 
-    clear_file("best_params.txt")
+    # clear_file("best_params.txt")
 
-    for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
-        find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False)
+    # for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
+    #     find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False)
+    #
+    # # do same but fix popul_size=100
+    # for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
+    #     find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=True)
 
-    # do same but fix popul_size=100
-    for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
-        find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=True)
+    #repeat_experiment
+    benchmark_filename = "./tour50.csv"
+    hyperparams = HyperparamsEvolAlgorithm()
+
+    # *****./tour50.csv*********
+    # Best popul_size is 100 with fitness 27381.955197858802
+    # Best offspring_size_multiplier is 3 with fitness 26974.251541824528
+    # Best k is 3 with fitness 26031.545034139865
+    # Best mutation_rate is 0.4 with fitness 26997.9235746832
+    # Best migrate_after_epochs is 50 with fitness 27478.841328411843
+    # Best migration_percentage is 0.05 with fitness 26278.11898516824
+    # Best merge_after_percent_time_left is 0.5 with fitness 27046.968576194697
+    # Best fitness_sharing_subset_percentage is 0.05 with fitness 28164.532944651237
+    # Best alpha is 0.5 with fitness 27585.71226280139
+    # Best local_search is ('insert_random_node', 1) with fitness 25926.17765643146
+
+    hyperparams.popul_size = 100
+    hyperparams.offspring_size_multiplier = 3
+    hyperparams.k = 3
+    hyperparams.mutation_rate = 0.4 # will try 0.05 as well
+    hyperparams.migrate_after_epochs = 50 # will try 25 as well
+    hyperparams.migration_percentage = 0.05
+    hyperparams.merge_after_percent_time_left = 0.5
+    hyperparams.fitness_sharing_subset_percentage = 0.05
+    hyperparams.alpha = 0.5
+    hyperparams.local_search = ("insert_random_node", 1)
+
+    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duration=15)
+
 

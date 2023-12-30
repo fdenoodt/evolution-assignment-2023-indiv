@@ -4,11 +4,11 @@ from utility import Utility
 
 
 class ScoreTracker:
-    def __init__(self, n, maximize, keep_running_until_timeup, numIters, reporter_name, benchmark, second_filename):
+    def __init__(self, n, maximize, keep_running_until_timeup, numIters, reporter_name, benchmark, second_filename, max_duration=None):
         self.maximize = maximize
         self.all_time_best_fitness = -np.inf if maximize else np.inf
         self.all_time_sigma_best = np.zeros(n, dtype=np.int64)
-        reporter = Reporter.Reporter(reporter_name, second_filename)
+        reporter = Reporter.Reporter(reporter_name, second_filename, max_duration=max_duration)
         self.utility = Utility(reporter, keep_running_until_timeup, numIters)
         self.benchmark = benchmark
 

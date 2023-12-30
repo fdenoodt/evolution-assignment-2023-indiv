@@ -44,7 +44,7 @@ class GraphPlotter:
             # tikzplotlib.save(filename + ".tex")
 
         # plt.show()
-        plt.close() # close the figure, so it does not appear in the next graph
+        plt.close()  # close the figure, so it does not appear in the next graph
 
     @staticmethod
     def compare_best(x, ys, xticks, x_label, y_label, title, filename=None):
@@ -146,9 +146,93 @@ class GraphPlotter:
             "Mean and best objective value over time (first 10% of iterations)",
             f"{target_file_first_10_percent}_mean_objective_value")
 
+    @staticmethod
+    # GraphPlotter.make_bar_graph(f"./BARS/50_tours/", nb_repeats)
+    def make_bar_graph(dir, nb_repeats):
+        """ Loads the files in dir (there are `nb_repeats` of them). Naming convention = iter=0.csv, iter=1.csv, ...
+            Makes a histogram of the final mean fitnessess and the final best fitnesses of the `nb_repeats` runs.
+        """
+        mean_fitnesses = []
+        best_fitnesses = []
+        for i in range(nb_repeats):
+            filename = f"{dir}/iter={i}.csv"
+            # results = GraphPlotter.read_report_file(filename)
+            # numIterationss, timeElapseds, meanObjectives, bestObjectives = results
+            # mean_fitnesses.append(meanObjectives[-1])
+            # best_fitnesses.append(bestObjectives[-1])
+
+            # only read the last line of the file
+            with open(filename, "r") as inFile:
+                # get last line
+                last_line = inFile.readlines()[-1]
+                # split by comma
+                parts = last_line.strip().split(',')
+                # get mean and best fitness
+                mean_fitness = float(parts[2])
+                best_fitness = float(parts[3])
+                # add to list
+                mean_fitnesses.append(mean_fitness)
+                best_fitnesses.append(best_fitness)
+
+        # make the bar graph
+        mean_fitnesses = np.array(mean_fitnesses)
+        best_fitnesses = np.array(best_fitnesses)
+
+        # print mean and standard deviation for mean and best fitnesses
+        print(f"Mean fitnesses: {np.mean(mean_fitnesses)} +- {np.std(mean_fitnesses)}")
+        print(f"Best fitnesses: {np.mean(best_fitnesses)} +- {np.std(best_fitnesses)}")
+
+        fig, ax = plt.subplots()
+        # set title
+        ax.set_title(f"Final mean/best fitnesses of {nb_repeats} runs")
+
+        ax.set_xlabel("Fitness")
+        ax.set_ylabel("Frequency")
+        ax.hist(mean_fitnesses, bins=20)
+        ax.hist(best_fitnesses, bins=20, alpha=0.5)
+
+
+        # plt.title(f"Final mean/best fitnesses of {nb_repeats} runs")
+        # plt.xlabel("Fitness")
+        # plt.ylabel("Frequency")
+        # plt.hist(mean_fitnesses, bins=20)
+        # plt.hist(best_fitnesses, bins=20, alpha=0.5)
+
+        # plt.legend(["Mean fitnesses", "Best fitnesses"])
+
+        # add mean and std to plot
+        # plt.text(0.5, 0.5, f"Mean fitnesses: {np.mean(mean_fitnesses):.2f} +- {np.std(mean_fitnesses):.2f}\n \n"
+        #                     f"Best fitnesses: {np.mean(best_fitnesses):.2f} +- {np.std(best_fitnesses):.2f}",
+        #           horizontalalignment='center',
+        #           verticalalignment='center',
+        #           transform=plt.gca().transAxes)
+
+        textstr = '\n'.join((
+            r'$\mu~means=%.2f$' % (np.mean(mean_fitnesses),),
+            r'$\sigma~means=%.2f$' % (np.std(mean_fitnesses),),
+            r'$\mu~bests=%.2f$' % (np.mean(best_fitnesses),),
+            r'$\sigma~bests=%.2f$' % (np.std(best_fitnesses),)
+        ))
+
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+        # place a text box in upper left in axes coords
+        ax.text(0.55, 0.95, textstr, transform=ax.transAxes, fontsize=14,
+                verticalalignment='top', bbox=props)
+
+
+
+        plt.savefig(f"{dir}/mean_fitnesses.png")
+        plt.savefig(f"{dir}/mean_fitnesses.pdf")
+
+        plt.show()
+        plt.close()
+
 
 if __name__ == "__main__":
-    GraphPlotter.read_file_and_make_graph("r0123456.csv")
+    GraphPlotter.make_bar_graph("./BARS/50_tours/", 5)
+
+    # GraphPlotter.read_file_and_make_graph("r0123456.csv")
 
     # # best params:     run_experiment(100, 1, 10, 0.05, filename, save_to)
     # popul_size = 100

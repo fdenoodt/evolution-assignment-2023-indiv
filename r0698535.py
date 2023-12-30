@@ -8,13 +8,14 @@ import numpy as np
 
 
 class r0698535:
-    def __init__(self, algorithm: AbstractAlgorithm, numIters):
+    def __init__(self, algorithm: AbstractAlgorithm, numIters, max_duration=None):
         self.reporter_name = self.__class__.__name__
         self.algorithm = algorithm
         self.numIters = numIters
+        self.max_duration = max_duration
 
     def optimize(self):
-        return self.algorithm.optimize(self.numIters, self.reporter_name)
+        return self.algorithm.optimize(self.numIters, self.reporter_name, self.max_duration)
 
 # if __name__ == '__main__':
 # distanceMatrix = np.array([[0, 1, 2, 3, 4],
