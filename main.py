@@ -22,6 +22,35 @@ from plackett_luce_algorithm import PlackettLuceAlgorithm
 from graph_plotter import GraphPlotter
 
 
+def run_experiment_plackett_luce(hyperparams, benchmark_filename):
+    print("*******************************************************************")
+    print("Running experiment with parameters:")
+    print(hyperparams.__dict__)
+
+    # csv_filename is based on hyperparams and benchmark_filename
+    GraphPlotter.mkdir(f"./pl/{benchmark_filename[:-4]}")
+    csv_filename = (f"./pl/{benchmark_filename[:-4]}/lr={hyperparams.lr},"
+                    f"nb_samples_lambda={hyperparams.nb_samples_lambda},"
+                    f"U={hyperparams.U.__name__}")
+
+    numIters = np.inf
+    benchmark = Benchmark(benchmark_filename, normalize=True, maximise=False)
+
+    algorithm = PlackettLuceAlgorithm(hyperparams.lr, hyperparams.nb_samples_lambda, hyperparams.U, benchmark, pdf,
+                                      hyperparams.keep_running_until_timeup, csv_filename)
+    a = r0698535.r0698535(algorithm, numIters, max_duration=60)  # 1 minute
+
+    try:
+        best_fitness = a.optimize()
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt")
+        best_fitness = 0
+    finally:
+        GraphPlotter.read_file_and_make_graph(f"{csv_filename}.csv")
+
+    return best_fitness
+
+
 def run_experiment(hyperparams, benchmark_filename):
     print("*******************************************************************")
     print("Running experiment with parameters:")
@@ -90,7 +119,8 @@ class HyperparamsEvolAlgorithm:
 
 class HyperparamsPlackettLuceAlgorithm:
     def __init__(self,
-                 lr=0.01,
+                 pdf,
+                 lr=0.9,
                  nb_samples_lambda=100,
                  U=PlackettLuce.U_identity,
                  keep_running_until_timeup=True):
@@ -98,7 +128,7 @@ class HyperparamsPlackettLuceAlgorithm:
         self.nb_samples_lambda = nb_samples_lambda
         self.U = U
         self.keep_running_until_timeup = keep_running_until_timeup
-        # pdf: PdfRepresentation = VanillaPdf(benchmark.permutation_size())
+        self.pdf: PdfRepresentation = pdf
         # pdf: PdfRepresentation = ConditionalPdf(benchmark.permutation_size())
         # algorithm = PlackettLuceAlgorithm(lr, nb_samples_lambda, U, benchmark, pdf)
 
@@ -174,7 +204,8 @@ def find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False):
         append_to_file("best_params.txt", f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
 
 
-def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duration=15, bar_chart=False): # duration in seconds
+def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duration=15,
+                      bar_chart=False):  # duration in seconds
     print("*******************************************************************")
     print("Running experiment with parameters:")
     print(hyperparams.__dict__)
@@ -200,16 +231,11 @@ def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duratio
             GraphPlotter.read_file_and_make_graph(f"{csv_filename}.csv")
             pass
 
-
     if bar_chart:
         # only for 50 tours
         assert benchmark_filename == "./tour50.csv"
         # after the nb_repeats, make a bar graph
         GraphPlotter.make_bar_graph(f"./BARS/50_tours", nb_repeats)
-
-
-
-
 
 
 if __name__ == "__main__":
@@ -240,23 +266,22 @@ if __name__ == "__main__":
     # for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
     #     find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=True)
 
-    #repeat_experiment
+    # repeat_experiment
     benchmark_filename = "./tour50.csv"
     hyperparams = HyperparamsEvolAlgorithm()
 
     # *****./tour50.csv********* BEST PARAMS *****
-    hyperparams.popul_size = 50 #100
-    hyperparams.offspring_size_multiplier = 1 #3
+    hyperparams.popul_size = 50  # 100
+    hyperparams.offspring_size_multiplier = 1  # 3
     hyperparams.k = 3
-    hyperparams.mutation_rate = 0.1 #0.05 # will try 0.05 as well
-    hyperparams.migrate_after_epochs = 25 #50 # will try 25 as well
+    hyperparams.mutation_rate = 0.1  # 0.05 # will try 0.05 as well
+    hyperparams.migrate_after_epochs = 25  # 50 # will try 25 as well
     hyperparams.migration_percentage = 0.05
     hyperparams.merge_after_percent_time_left = 0.5
     hyperparams.fitness_sharing_subset_percentage = 0.05
-    hyperparams.alpha = 1 # 0.5
+    hyperparams.alpha = 1  # 0.5
     hyperparams.local_search = ("2-opt", 1)
     # repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=20)
-
 
     # *****./tour750.csv********* BEST PARAMS *****
     # Best popul_size is 50 with fitness 1148867.0279284255
@@ -274,7 +299,7 @@ if __name__ == "__main__":
     hyperparams = HyperparamsEvolAlgorithm()
     hyperparams.popul_size = 50
     hyperparams.offspring_size_multiplier = 1
-    hyperparams.k = 25 # strange ...
+    hyperparams.k = 25  # strange ...
     hyperparams.mutation_rate = 0.2
     hyperparams.migrate_after_epochs = 25
     hyperparams.migration_percentage = 0.05
@@ -283,6 +308,11 @@ if __name__ == "__main__":
     hyperparams.alpha = 1
     hyperparams.local_search = ("insert_random_node", 0.5)
 
-    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=None)
+    # repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=None)
 
-
+    # Plackett-Luce
+    benchmark_filename = "./tour50.csv"
+    # pdf: PdfRepresentation = VanillaPdf(n=50)
+    pdf: PdfRepresentation = ConditionalPdf(n=50)
+    hyperparams = HyperparamsPlackettLuceAlgorithm(pdf)
+    run_experiment_plackett_luce(hyperparams, benchmark_filename)

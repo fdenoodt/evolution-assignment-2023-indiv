@@ -45,7 +45,7 @@ class EvolAlgorithm(AbstractAlgorithm):
         maximize = self.benchmark.maximise
         keep_running_until_timeup = self.keep_running_until_timeup
         score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.benchmark,
-                                     self.filename, max_duration=max_duration)
+                                     second_filename=self.filename, max_duration=max_duration)
 
         selection = lambda population, fitnesses: (
             Selection.selection(population, self.k, self.offspring_size, fitnesses))

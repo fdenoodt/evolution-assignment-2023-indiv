@@ -80,7 +80,7 @@
  \item \textbf{Group members during group phase:} Sisheng Liu and Melvin Schurmans
  \item \textbf{Time spent on group phase:} 12 hours
  \item \textbf{Time spent on final code:} 168 hours or more (3 * 7d * 8h).
- \item \textbf{Time spent on final report:} \ReplaceMe{10 hours}
+ \item \textbf{Time spent on final report:} 14 hours
 \end{itemize}
 
 \section{Changes since \switch{the group phase}{your previous submission} (target: $0.25$ pages)}
@@ -239,7 +239,7 @@
 	Although we did not explore it in this project, another interesting technique would be age based elimination. This would be less computationally demanding, and the possible dangers of bad offsprings are already reduced by local search. Using age based elimination would allow us to compute local search only for the candidate solutions that are guaranteed to go through. In our current elimination operator (k-tournament), we risk creating offsprings and applying expensive local search procedures to offsprings that are not surviving the following rounds.
 	
 
-\subsection{Local search operators}
+\subsection{Local search operators} \label{cha:local search}
 	We consider three operators:
 	\begin{enumerate}
 		\item \textbf{Two-opt:} our implementation is based on the pseudo-code found on online\footnote{https://en.wikipedia.org/wiki/2-opt}. There are two implementations to consider, two-opt for symmetric matrices or asymmetric matrices. Although in theory, the symmetric variant is not applicable to our TSP, we observed it still significantly improved performance, while being much easier to compute than in the asymmetric case. Hence, we use the efficient two-opt for symmetric distance matrices, choosing two nodes swapping them, and reversing the path between the two nodes.
@@ -309,7 +309,7 @@ For the histogram experiment with 500 runs, running the algorithm for 5 minutes 
 $$
 \frac{1}{P} \sum_{\substack{i~\in~\{1 \dots P \}}} d(\sigma_i, \sigma_{(i+1) \% P})
 $$
-Here, $P \in \mathbb{N}$ is the population size and $d()$ is the same distance function discussed section \ref{cha:diversity}. The metric has a complexity of roughly $\Theta(P \times n)$.
+Here, $P \in \mathbb{N}$ is the population size and $d()$ is the same distance function discussed section \ref{cha:diversity}. The metric can be computed with a time complexity of roughly $\Theta(P \times n)$.
 Intuitively, the metric compares each node to one other node and computes the average distance. Based on this metric we have an idea of how similar the population is, e.g.: 747.5 in a 750 tours TSP implies a lot of dissimilarity, while 0 implies that each node is the same.
 
 Based on this population-similarity metric, we set the stopping time for the 50 tour TSP to 20 seconds per run. This results in approximately the final 50 iterations to be stuck at the identical population (50 iterations roughly corresponds to 5 seconds, with a single island, or 20\% of the running duration).
@@ -367,9 +367,6 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 
 	
 
-\subsection{Other considerations}\label{sec_oth}
-%\ReplaceMe{Did you consider other items not listed above, such as elitism, multiobjective optimization strategies (e.g., island model, pareto front approximation), a parallel implementation, or other interesting computational optimizations (e.g. using advanced algorithms or data structures)? You can describe them here or add additional subsections as needed.}
-\textbf{TODO: discuss graphical algorithm}
 
 
 
@@ -443,11 +440,11 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 	Note that the paper contains an error. The equation shown here is correct.
 	
 	\subsubsection{An extension on the PMF}
-	Here we explore another representation for $p_\mathbf{w}$ which is not part of \cite{santucci_gradient_2020, ceberiojosu_model-based_2023}. 
+	Here, we explore another representation for $p_\mathbf{w}$ which is not part of \cite{santucci_gradient_2020, ceberiojosu_model-based_2023}. 
 	
-	\textbf{Motivation:} A noticeable limitation of the $p_\mathbf{w}$ representation in \ref{cha:pmf_indep} is the independence assumption between nodes. E.g.: traversing (= sampling) node $a$ will not influence whether the next node to be traversed is node $b$ or $c$. However, this is an incorrect assumption in the TSP which could drastically hurt the performance of a population. For instance, when the algorithm has learned the optimal path to be $a, b, c, \dots $. Now consider an unlucky node being sampled at the start, e.g. $b$ is sampled first. Using the representation from the $p_\mathbf{w}$, the next node is most likely to be $a$, however, this may no longer be the best next node the traverse, resulting in reduced scores.
+	\textbf{Motivation:} A noticeable limitation of the $p_\mathbf{w}$ representation in \ref{cha:pmf_indep} is the independence assumption between nodes. E.g.: traversing (= sampling) node $a$ will not influence whether the next node to be traversed is node $b$ or $c$. However, this is an incorrect assumption in the TSP which could drastically hurt the performance. For instance, when the algorithm has learned the optimal path to be $a, b, c, \dots $. Now consider an unlucky node being sampled at the start, e.g. $b$ is sampled first. Using the representation from the $p_\mathbf{w}$, the next node is most likely to be $a$, however, this may no longer be the best next node the traverse, resulting in reduced scores.
 	
-	Another note, may be related to the number of learned paths. A single $p_\mathbf{w}$ learns a single optimal path, but perhaps it could be interesting to also consider others paths. We therefore, represent $p_\mathbf{w}$ as a first order Markov chain network, where sampling a node $a$ at time step $t$ is dependent on the previously sampled node at time step $t-1$. A Bayesian network is depicted in figure \ref{fig:bayesian-network}. Formally, it is defined as follows:
+	Another note, is related to the number of learned paths. A single $p_\mathbf{w}$ learns a single optimal path, but perhaps it could be interesting to also consider others paths. We therefore, represent $p_\mathbf{w}$ as a first order Markov chain network, where sampling a node $a$ at time step $t$ is dependent on the previously sampled node at time step $t-1$. Its Bayesian network is depicted in figure \ref{fig:bayesian-network}. Formally, $p_\matr{w}$ is defined as follows:
 	$$
 	\begin{aligned}
 		p_\matr{W}(\sigma) &= p\left(\sigma(1)\right) \cdot \prod_{t=2}^{n-1} p\left(\sigma(t) \mid \sigma(t-1) \right) \\
@@ -463,7 +460,7 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 		\label{fig:bayesian-network}
 	\end{figure}
 	
-	The gradient $\nabla F_\mathbf{\matr{W}} \in \mathbb{R}^{n\times n}$ is now a square matrix, based on $\nabla \log p_\matr{W}(\sigma)$. The partial derivative is defined similarly as before with $t \in \{ 2 \dots n \}$:
+	The gradient $\nabla F_\mathbf{\matr{W}} \in \mathbb{R}^{n\times n}$ is now a square matrix, based on $\nabla \log p_\matr{W}(\sigma)$. The partial derivative is defined similar as before for $t \in \{ 2 \dots n \}$:
 	$$
 	\frac{\partial \log p_\mathbf{w}(\sigma)}{\partial \matr{w}_{\sigma(t) \mid \sigma(t-1)}} = 1-\exp \matr{w}_{\sigma(t) \mid \sigma(t - 1)} \sum_{k=2}^t \frac{1}{\sum_{j=k}^n \exp \matr{w}_{\sigma(j) \mid \sigma(t - 1)}}
 	$$
@@ -487,9 +484,11 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 	%\RemoveMe{\textbf{Goal:} Based on this section and our execution of your code, we will evaluate the performance (time, quality of solutions) of your implementation and your ability to interpret and explain the results on benchmark problems.}
 
 \subsection{Metadata}
+	All parameters are presented in table \ref{tbl:params}. Overall, the parameters remain relatively constant depending on the number of tours. Two exceptions; local search and $k$ in k-tournament. Although two-opt obtained good results for smaller tours, it does not scale to larger tours. We did experiment with applying two-opt to only a subset of nodes in a path, but although less computationally demanding, it did not always result in good candidate solutions. This may be a side effect of the symmetric matrix assumption we've made to improve time complexity. Two-opt reverses the path between two nodes, and as the number of tours increases, the length of these reversed lists also increases. This may result in the error due to the symmetric distance matrix assumption to also increase, resulting in a higher probability of faulty solutions. As a compensation for the lack of a good local search procedure in the larger tours, we increase $k$ to increase convergence speed, as the good individuals in the populations have larger chance of surviving.
+
 
 	%\ReplaceMe{What parameters are there to choose in your evolutionary algorithm? Which fixed parameter values did you use for all experiments below? If some parameters are determined based on information from the problem instance (e.g., number of cities), also report their specific values for the problems below.
-	\textbf{TODO} Params per problem
+
 
 	%Report the main characteristics of the computer system on which you ran your evolutionary algorithm. Include the processor or CPU (including the number of cores and clock speed), the amount of main memory, and the version of Python 3.}
 	PC characteristics:
@@ -499,58 +498,78 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 		\item Python version 3.9
 	\end{enumerate}
 	
+
+
+	
+
+\subsection{tour50.csv}	
+	Figures \ref{fig:meanfitnesses} and \ref{fig:tour50csvmeanobjectivevalue} display the performance graphs. The algorithm is run for exactly 20 seconds. The first 10\% in the convergence graph (fig \ref{fig:tour50csvmeanobjectivevalue}) have been removed. The graph depicts the results from a single island. Note that the duration in the graph is not entirely linear. The first 25 iterations take 10 seconds, while the remaining 100 iterations also take 10 seconds. This is due to the first iterations being more computationally demanding due to having three islands in tandem.
+	
+	To gain some insight in a single run, we refer to table \ref{tbl:convergence}. Due to the two-opt local search, the algorithm finds a better solution than the greedy heuristic provided on Toledo within 25 iterations. Meanwhile, due to the order crossover and other diversity mechanisms, the population can remain diverse in phase one (the maximum distance is 50 for 50 tours). Phase two behaves similar to the egg-holder algorithm where the entire population quickly converges to a single solution. This is due to the edge crossover operator used in phase 2. We observe that the average distance between individuals quickly converges to zero, indicating that the entire population has become the same individual.
+	
+	The histogram (figure \ref{fig:meanfitnesses}) indicates quite consistent results. The algorithm consistently finds candidate solutions which are better than the greedy heuristic from Toledo.
+	An example candidate solution with score 25975.70 is the following: (0 26 21	32	17	40	34	33	44	36	23	28	27	12	25	39	37	20	49	22	6	9	43	30	48	5	8	46	35	16	4	15	47	42	11	3	19	38	10	13	7	41	14	1	18	24	45	2	31	29).
+
+
+	%\ReplaceMe{Run your algorithm on this benchmark problem (with the 5 minute time limit from the Reporter). \textbf{Include a typical convergence graph, by plotting the mean and best objective values in function of the time} (for example based on the output of the Reporter class).
+	%	
+	%What is the best tour length you found? What is the corresponding sequence of cities?
+	%	
+	%Interpret your results. How do you rate the performance of your algorithm (time, memory, speed of convergence, diversity of population, quality of the best solution, etc)? Is your solution close to the optimal one?
+	%	
+	%\textbf{Solve this problem 500 times and record the results. Make a histogram of the final mean fitnessess and the final best fitnesses of the 500 runs. Comment on this figure: is there a lot of variability in the results, what are the means and the standard deviations?}
+	%}
+	
+	
+	\begin{table}[ht]
+		\centering
+		\small
+		\begin{tabular}{|l|c|c|c|c|}
+			\hline
+			\textbf{Parameter} & \textbf{50 Tours} & \textbf{100 Tours} & \textbf{500 Tours} & \textbf{1000 Tours} \\
+			\hline
+			\textbf{Popul Size} & 50 & 50 & 50 & 50 \\
+			\textbf{Offspring size mult.} & 1 & 1 & 1 & 1 \\
+			\textbf{K (k-tournament)} & 3 & 3 & 10 & 25 \\
+			\textbf{Mutation rate} & 0.1 & 0.2 & 0.2 & 0.2 \\
+			\textbf{Migrate after epochs} & 25 & 25 & 25 & 5 \\
+			\textbf{Migration \%} & 0.05 & 0.05 & 0.05 & 0.05 \\
+			\textbf{Merge islands after \% time left} & 0.5 & 0.5 & 0.5 & 0.5 \\
+			\textbf{Fitness sharing sub-population \%} & 0.05 & 0.05 & 0.05 & 0.05 \\
+			\textbf{Local search} & 2-opt & 2-opt & IRN, 0.5 & IRN, 0.5 \\
+			\hline
+		\end{tabular}
+		\caption{Parameter settings for different tours. IRN refers to the Insert Random Node operator and 0.5 the number of nodes to consider, as discussed in section \ref{cha:local search}}
+		\label{tbl:params}
+	\end{table}
+	
+	
+		
+	\begin{table}[ht]
+		\centering
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\textbf{Phase} & \textbf{Island} & \textbf{Iteration} & \textbf{Best Fitness} & \textbf{Avg Fitness} & \textbf{Fit Shared} & \textbf{Avg Dist} & \textbf{Mutation} \\
+			\hline
+			\multirow{3}{*}{1} & 0 & 24 & 27025.15 & 146528.29 & 59479.35 & 46.86 & Inversion\\
+			& 1 & 24 & 26792.80 & 126835.99 & 66089.59 & 46.57 & Swap \\
+			& 2 & 24 & 26736.30 & 124162.91 & 122564.17 & 46.47 & Scramble\\
+			\hline
+			\multirow{4}{*}{2} & NA & 49 & 25957.36 & 26759.92 & 1066930.26 & 0.69 & Scramble\\
+			& NA & 74 & 25957.36 & 26020.75 & 981034.99 & 1.02 & Scramble \\
+			& NA & 99 & 25981.84 & 25981.82 & 1065255.44 & 0.00 & Scramble\\
+			& NA & 124 & 25981.84 & 25981.84 & 1065255.44 & 0.00 & Scramble\\
+			\hline
+		\end{tabular}
+		\caption{Example run on the 50 tours TSP, 20 seconds. Both phases run for 10 seconds each.}
+		\label{tbl:convergence}
+	\end{table}
+	
 	
 
 
 
-\subsection{tour50.csv}
 
-\ReplaceMe{Run your algorithm on this benchmark problem (with the 5 minute time limit from the Reporter). \textbf{Include a typical convergence graph, by plotting the mean and best objective values in function of the time} (for example based on the output of the Reporter class).
-
-What is the best tour length you found? What is the corresponding sequence of cities?
-
-Interpret your results. How do you rate the performance of your algorithm (time, memory, speed of convergence, diversity of population, quality of the best solution, etc)? Is your solution close to the optimal one?
-
-\textbf{Solve this problem 500 times and record the results. Make a histogram of the final mean fitnessess and the final best fitnesses of the 500 runs. Comment on this figure: is there a lot of variability in the results, what are the means and the standard deviations?}
-
-Params:
-%    hyperparams.popul_size = 50 #100
-%	hyperparams.offspring_size_multiplier = 1 #3
-%	hyperparams.k = 3
-%	hyperparams.mutation_rate = 0.1 #0.05 # will try 0.05 as well
-%	hyperparams.migrate_after_epochs = 25 #50 # will try 25 as well
-%	hyperparams.migration_percentage = 0.05
-%	hyperparams.merge_after_percent_time_left = 0.5
-%	hyperparams.fitness_sharing_subset_percentage = 0.05
-%	hyperparams.alpha = 1 # 0.5
-%	# hyperparams.local_search = ("insert_random_node", 1)
-%	hyperparams.local_search = ("2-opt", 1)
-
-	
-\begin{table}[ht]
-	\centering
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\textbf{Phase} & \textbf{Island} & \textbf{Iteration} & \textbf{Best Fitness} & \textbf{Avg Fitness} & \textbf{Fit Shared} & \textbf{Avg Dist} & \textbf{Mutation} \\
-		\hline
-		\multirow{3}{*}{1} & 0 & 24 & 27025.15 & 146528.29 & 59479.35 & 46.86 & Inversion\\
-		& 1 & 24 & 26792.80 & 126835.99 & 66089.59 & 46.57 & Swap \\
-		& 2 & 24 & 26736.30 & 124162.91 & 122564.17 & 46.47 & Scramble\\
-		\hline
-		\multirow{4}{*}{2} & NA & 49 & 25957.36 & 26759.92 & 1066930.26 & 0.69 & Scramble\\
-		& NA & 74 & 25957.36 & 26020.75 & 981034.99 & 1.02 & Scramble \\
-		& NA & 99 & 25981.84 & 25981.82 & 1065255.44 & 0.00 & Scramble\\
-		& NA & 124 & 25981.84 & 25981.84 & 1065255.44 & 0.00 & Scramble\\
-		\hline
-	\end{tabular}
-	\caption{Example run on the 50 tours TSP, 20 seconds. Both phases run for 10 seconds each.}
-\end{table}
-	
-	
-
-
-
-}
 \subsection{tour100.csv}\label{sec_shorttour}
 
 can nicely see the egg holder effect. of phase 2
@@ -594,24 +613,25 @@ perhaps could try
 
 
 \begin{figure}[htbp]
+	\centering
 	\begin{minipage}{0.5\linewidth}
 		\centering
 		\includegraphics[width=0.9\linewidth]{mean_fitnesses}
-		\caption{500 runs applied to the 50 tour TSP. The averages and standard deviations are displayed in the top right corner.}
+		\caption{50 tours: 500 runs, averages/standard \\ deviations are displayed in the top right corner.}
 		\label{fig:meanfitnesses}
 	\end{minipage}%
+	\begin{minipage}{0.5\linewidth}
+		\centering
+		\includegraphics[width=0.9\linewidth]{tour_50_csv_mean_objective_value}
+		\caption{50 tours: 20 seconds, first 10\% have been skipped.}
+		\label{fig:tour50csvmeanobjectivevalue}
+	\end{minipage}%
+	
 	\begin{minipage}{0.5\linewidth}
 		\centering
 		\includegraphics[width=0.9\linewidth]{tour_100}
 		\caption{100 tours}
 		\label{fig:tour100}
-	\end{minipage}
-	
-	\begin{minipage}{0.5\linewidth}
-		\centering
-		\includegraphics[width=0.9\linewidth]{tour_50_csv_mean_objective_value}
-		\caption{50 tours: 20 seconds, first 10\% of iterations are skipped. Results from a single island are shown. Time is a bit weird to interpret. The first half is 3 times slower due to 3 islands.}
-		\label{fig:tour50csvmeanobjectivevalue}
 	\end{minipage}%
 	\begin{minipage}{0.5\linewidth}
 		\centering
@@ -619,6 +639,7 @@ perhaps could try
 		\caption{500 tours}
 		\label{fig:tour500}
 	\end{minipage}
+	
 	\begin{minipage}{0.5\linewidth}
 		\centering
 		\includegraphics[width=0.9\linewidth]{tour_1000}
