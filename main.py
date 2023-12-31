@@ -212,8 +212,9 @@ def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duratio
 
     for i in range(nb_repeats):
         # csv_filename is based on hyperparams and benchmark_filename
-        GraphPlotter.mkdir(f"./BARS/50_tours/")
-        csv_filename = (f"./BARS/50_tours/iter={i}")
+        nb_tours = benchmark_filename[6:-4]
+        GraphPlotter.mkdir(f"./BARS/{nb_tours}_tours/")
+        csv_filename = (f"./BARS/{nb_tours}_tours/iter={i}")
 
         numIters = np.inf
         benchmark = Benchmark(benchmark_filename, normalize=False, maximise=False)
@@ -233,9 +234,9 @@ def repeat_experiment(hyperparams, benchmark_filename, nb_repeats=5, max_duratio
 
     if bar_chart:
         # only for 50 tours
-        assert benchmark_filename == "./tour50.csv"
+        assert benchmark_filename == f"./tour{nb_tours}.csv"
         # after the nb_repeats, make a bar graph
-        GraphPlotter.make_bar_graph(f"./BARS/50_tours", nb_repeats)
+        GraphPlotter.make_bar_graph(f"./BARS/{nb_tours}_tours", nb_repeats)
 
 
 if __name__ == "__main__":
@@ -310,9 +311,57 @@ if __name__ == "__main__":
 
     # repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=None)
 
+    benchmark_filename = "./tour1000.csv"
+    hyperparams = HyperparamsEvolAlgorithm()
+    hyperparams.popul_size = 50
+    hyperparams.offspring_size_multiplier = 1
+    hyperparams.k = 25  # strange ...
+    hyperparams.mutation_rate = 0.2
+    hyperparams.migrate_after_epochs = 5
+    hyperparams.migration_percentage = 0.05
+    hyperparams.merge_after_percent_time_left = 0.5
+    hyperparams.fitness_sharing_subset_percentage = 0.05
+    hyperparams.alpha = 1
+    hyperparams.local_search = ("insert_random_node", 0.5)
+
+    # repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=None)
+
+    # *****./tour500.csv********* BEST PARAMS *****
+    benchmark_filename = "./tour500.csv"
+    hyperparams = HyperparamsEvolAlgorithm()
+    hyperparams.popul_size = 50
+    hyperparams.offspring_size_multiplier = 1
+    hyperparams.k = 10  # strange ... # since in 750 it was 25 to quickly find a good solution wthout getting stuck, can here try smaller val -> more randomness
+    hyperparams.mutation_rate = 0.2
+    hyperparams.migrate_after_epochs = 25
+    hyperparams.migration_percentage = 0.05
+    hyperparams.merge_after_percent_time_left = 0.5
+    hyperparams.fitness_sharing_subset_percentage = 0.05
+    hyperparams.alpha = 1
+    hyperparams.local_search = ("insert_random_node", 0.5)
+    # hyperparams.local_search = ("2-opt", 1)
+
+    # repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=None)
+
+    # *****./tour100.csv********* BEST PARAMS *****
+    benchmark_filename = "./tour100.csv"
+    hyperparams = HyperparamsEvolAlgorithm()
+    hyperparams.popul_size = 50
+    hyperparams.offspring_size_multiplier = 1
+    hyperparams.k = 3  # strange ...
+    hyperparams.mutation_rate = 0.2
+    hyperparams.migrate_after_epochs = 25
+    hyperparams.migration_percentage = 0.05
+    hyperparams.merge_after_percent_time_left = 0.5
+    hyperparams.fitness_sharing_subset_percentage = 0.05
+    hyperparams.alpha = 1
+    hyperparams.local_search = ("2-opt", 1)
+
+    repeat_experiment(hyperparams, benchmark_filename, nb_repeats=1, max_duration=None)
+
     # Plackett-Luce
     benchmark_filename = "./tour50.csv"
     # pdf: PdfRepresentation = VanillaPdf(n=50)
     pdf: PdfRepresentation = ConditionalPdf(n=50)
     hyperparams = HyperparamsPlackettLuceAlgorithm(pdf)
-    run_experiment_plackett_luce(hyperparams, benchmark_filename)
+    # run_experiment_plackett_luce(hyperparams, benchmark_filename)
