@@ -93,7 +93,7 @@ class AlgorithmWrapper:
         return best_fitness
 
     @staticmethod
-    def run_experiment(hyperparams, benchmark_filename):
+    def run_experiment(hyperparams, benchmark_filename, reporter_name):
         print("*******************************************************************")
         print("Running experiment with parameters:")
         print(hyperparams.__dict__)
@@ -112,10 +112,11 @@ class AlgorithmWrapper:
         benchmark = Benchmark(benchmark_filename, normalize=False, maximise=False)
 
         algorithm = EvolAlgorithm(benchmark, hyperparams, csv_filename)
-        a = r0698535.r0698535(algorithm, numIters)
+        # a = r0698535.r0698535(algorithm, numIters)
+        a = AlgorithmWrapper(algorithm, numIters)
 
         try:
-            best_fitness = a.optimize()
+            best_fitness = a.optimize(reporter_name)
             # best_fitness = 0
         except KeyboardInterrupt:
             print("KeyboardInterrupt")
@@ -127,7 +128,7 @@ class AlgorithmWrapper:
         return best_fitness
 
     @staticmethod
-    def find_optimal_param(param_name, param_values, hyperparams, benchmark_filename):
+    def find_optimal_param(param_name, param_values, hyperparams, benchmark_filename, reporter_name):
         # *** POPUL_SIZE ***
         best_fitness = np.inf
         best_param = None
@@ -135,15 +136,15 @@ class AlgorithmWrapper:
             try:
                 exec(f"hyperparams.{param_name} = {param_value}")
 
-                fitness = run_experiment(hyperparams, benchmark_filename)
+                fitness = AlgorithmWrapper.run_experiment(hyperparams, benchmark_filename, reporter_name)
                 if fitness < best_fitness:
                     best_fitness = fitness
                     best_param = param_value
             except Exception as e:
-                append_to_file("best_params.txt", f"Error with {param_name} = {param_value}")
+                AlgorithmWrapper.append_to_file("best_params.txt", f"Error with {param_name} = {param_value}")
                 # print hyper_params
-                append_to_file("best_params.txt", str(hyperparams.__dict__))
-                append_to_file("best_params.txt", str(e))
+                AlgorithmWrapper.append_to_file("best_params.txt", str(hyperparams.__dict__))
+                AlgorithmWrapper.append_to_file("best_params.txt", str(e))
                 continue
 
         # set best param
@@ -162,7 +163,7 @@ class AlgorithmWrapper:
             f.write(text + "\n")
 
     @staticmethod
-    def find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False):
+    def find_optimal_param_for_tsp(benchmark_filename, reporter_name, fixed_popul_size=False):
         # Set parameters
         hyperparams = HyperparamsEvolAlgorithm()  # start with default params, and change one at a time
 
@@ -181,11 +182,11 @@ class AlgorithmWrapper:
         }
 
         # filename
-        append_to_file(f"best_params.txt", f"\n\n\n*********{benchmark_filename}*********")
+        AlgorithmWrapper.append_to_file(f"best_params.txt", f"\n\n\n*********{benchmark_filename}*********")
 
         for param_name, param_values in test_params.items():
-            best_param, all_time_best_fitness = find_optimal_param(param_name, param_values, hyperparams,
-                                                                   benchmark_filename)
+            best_param, all_time_best_fitness =  AlgorithmWrapper.find_optimal_param(param_name, param_values, hyperparams,
+                                                                   benchmark_filename, reporter_name)
             print()
             print()
             print()
@@ -195,7 +196,7 @@ class AlgorithmWrapper:
             print()
             print()
             print()
-            append_to_file("best_params.txt", f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
+            AlgorithmWrapper.append_to_file("best_params.txt", f"Best {param_name} is {best_param} with fitness {all_time_best_fitness}")
 
     @staticmethod
     def repeat_experiment(hyperparams, benchmark_filename, reporter_name, nb_repeats=5, max_duration=15,
@@ -237,38 +238,3 @@ class AlgorithmWrapper:
 
     def optimize(self, reporter_name):
         return self.algorithm.optimize(self.numIters, reporter_name, self.max_duration)
-
-    if __name__ == "__main__":
-        # Params are chosen based on impact on fitness, one at a time
-        # hyperparams.popul_size = 100
-        # hyperparams.offspring_size_multiplier = 1
-        # hyperparams.k = 3
-        # hyperparams.mutation_rate = 0.2
-        # hyperparams.nb_islands = 3, always fixed!
-        # hyperparams.migrate_after_epochs = 25
-        # hyperparams.migration_percentage = 0.05
-        # hyperparams.merge_after_percent_time_left = 0.5
-        # hyperparams.fitness_sharing_subset_percentage = 0.05
-        # hyperparams.alpha = 1
-        # hyperparams.local_search = "2-opt" & hyperparams.local_search_param = 1 together
-
-        seed = 123456
-        np.random.seed(seed)
-
-        # clear_file("best_params.txt")
-
-        # for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
-        #     find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=False)
-        #
-        # # do same but fix popul_size=100
-        # for benchmark_filename in ["./tour50.csv", "./tour200.csv", "./tour500.csv", "./tour750.csv", "./tour1000.csv"]:
-        #     find_optimal_param_for_tsp(benchmark_filename, fixed_popul_size=True)
-
-        # repeat_experiment
-        benchmark_filename = "./tour50.csv"
-        hyperparams = HyperparamsEvolAlgorithm()
-
-
-
-
-
