@@ -1,12 +1,10 @@
-import reporter as Reporter
-from utility import Utility
 from abc import ABC, abstractmethod
 import sys
 import time
 from python_tsp.exact import solve_tsp_dynamic_programming  # pip install python-tsp
 from python_tsp.heuristics import solve_tsp_simulated_annealing
 import matplotlib.pyplot as plt
-
+import os
 import numpy as np
 
 
@@ -115,6 +113,47 @@ class Benchmark(AbstractBenchmark):
         return permutation, distance
 
 
+class LolibBenchmark(AbstractBenchmark):
+    # used in PL-GS paper
+    def __init__(self, filename, normalize, maximise):
+        _matrix = self.read_matrix_from_file(filename)
+        super().__init__(_matrix, normalize, maximise)
+
+    def read_dimensions_from_file(self, file_path):
+        with open(file_path, 'r') as file:
+            _ = file.readline()  # skip first line
+            line2 = file.readline()  # eg: "50\n"
+            return int(line2)
+
+    def read_matrix_from_file(self, file_path):
+        dim = self.read_dimensions_from_file(file_path)
+
+        data = np.loadtxt(file_path, skiprows=2)
+        rows, cols = data.shape  # eg: 250, 10 -> so must reshape to 50, 50
+        assert rows * cols == dim * dim
+
+        matrix = data.reshape((dim, dim))
+
+        # temporarily set dim to 10 to test
+        matrix = matrix[:10, :10]
+
+        return matrix
+
+    def compute_fitness(self, population):
+        return Benchmark.compute_fitness_static_fastest(self.matrix, population)
+
+    @staticmethod
+    def compute_fitness_static_fastest(matrix, population):
+        num_cities = population.shape[1]
+
+        # Create indices for all pairs of cities
+        indices_i, indices_j = np.triu_indices(num_cities, k=1)
+
+        # Use advanced indexing to calculate fitness for all pairs of cities simultaneously
+        fitnesses = np.sum(matrix[population[:, indices_i], population[:, indices_j]], axis=1)
+        return fitnesses.astype(np.float32)
+
+
 class AbstractAlgorithm(ABC):
 
     @abstractmethod
@@ -164,7 +203,7 @@ class PlackettLuceAlgorithm(AbstractAlgorithm):
         score_tracker = ScoreTracker(n, maximize, keep_running_until_timeup, numIters, reporter_name, self.pl.benchmark,
                                      second_filename=self.filename, max_duration=max_duration)
 
-        self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n, pdf, maximize, score_tracker)
+        return self.optimize_plackett_luce(f, self.lr, self.nb_samples_lambda, n, pdf, maximize, score_tracker)
 
     def optimize_plackett_luce(self, fitness_func, lr, nb_samples_lambda, n, pdf, maximize, score_tracker):
         ctr = 0
@@ -189,6 +228,370 @@ class PlackettLuceAlgorithm(AbstractAlgorithm):
                 break
 
         return score_tracker.all_time_best_fitness
+
+
+class PdfRepresentation(ABC):
+    def __init__(self, n, w_log):
+        self.n = n
+        self.w_log = w_log
+
+    @abstractmethod
+    def sample_permutations(self, nb_samples_lambda):
+        pass
+
+    @abstractmethod
+    def calc_gradients(self, sigmas):
+        pass
+
+    @abstractmethod
+    def normalize_w_log(self):
+        pass
+
+    def update_w_log(self, delta_w_log_F, lr, maximize):
+        assert delta_w_log_F.shape == self.w_log.shape
+        if maximize:
+            self.w_log = self.w_log + (lr * delta_w_log_F)  # "+" for maximization, "-" for minimization
+        else:
+            self.w_log = self.w_log - (lr * delta_w_log_F)
+
+        self.normalize_w_log()
+
+
+class VanillaPdf(PdfRepresentation):
+    def __init__(self, n, w_log=None):
+        if w_log is None:
+            w_log = np.zeros(n)  # w is w_tilde
+            print("*" * 80)
+            print("w_log is None, initializing with zeros!")
+            print("*" * 80)
+        else:
+            assert len(w_log) == n
+
+        super().__init__(n, w_log)
+
+    def sample_permutations(self, nb_samples_lambda):
+        logits = self.w_log  # shape: (n,)
+        # TODO: w_log is correct, but np.exp(w_log) results in much faster convergence
+        n = len(logits)
+
+        u = np.random.rand(nb_samples_lambda, n)  # shape: (nb_samples_lambda, n)
+        g = logits - np.log(-np.log(u))  # shape: (nb_samples_lambda, n)
+
+        res = np.argsort(-g, axis=1)  # shape: (nb_samples_lambda, n)
+
+        # asset permutation consists of distinct elements
+        assert np.all([len(np.unique(permutation)) == len(permutation) for permutation in res])
+        return res
+
+    def sample_permutation(self):
+        w = np.exp(self.w_log)
+        n = len(w)
+        probabilities = w / np.sum(w)
+        permutation = np.random.choice(n, size=n, replace=False, p=probabilities)
+        return permutation
+
+    def sample_permutations_slow(self, nb_samples_lambda):
+        permutations = np.array([self.sample_permutation() for _ in range(nb_samples_lambda)])
+        return permutations
+
+    @staticmethod
+    def calc_w_log_p_partial(w_log, sigma, i):
+        """
+        Calculates the partial derivative of the log probability of the Plackett-Luce model
+        :param sigma: shape: (n)
+        :return: shape (1)
+        """
+        if i > 0:
+            sums = [np.sum(np.exp(w_log[sigma[k:]])) for k in range(i)]
+            intermediate_result = np.sum([1 / sum for sum in sums])
+            partial = 1 - np.exp(w_log[sigma[i]]) * intermediate_result
+            return partial  # single value
+        else:
+            return 1
+
+    @staticmethod
+    def inner_loop(i, sigmas, w_log, n):
+        """
+        Calculates the gradient for a single sample sigma[i]
+        :param i: index of the sample
+        :param sigmas: shape: (nb_samples_lambda, n)
+        :return: shape: (n)
+        """
+        js = np.arange(n)
+        gradient = np.zeros_like(w_log)
+        gradient[sigmas[i][js]] = np.array(
+            [VanillaPdf.calc_w_log_p_partial(w_log, sigmas[i], j) for j in range(n)])
+        return gradient
+
+    @staticmethod
+    def calc_w_log_ps(w_log, sigmas):
+        # Calculates all partial derivatives for a list of samples sigmas
+        n = len(sigmas[0])
+        nb_samples_lambda = len(sigmas)
+
+        gradients = np.zeros((nb_samples_lambda, n))
+        sample_indices = np.arange(nb_samples_lambda)
+        gradients[sample_indices] = np.array(
+            [VanillaPdf.inner_loop(i, sigmas, w_log, n) for i in range(nb_samples_lambda)])
+
+        return gradients  # shape: (nb_samples_lambda, n)
+
+    def calc_gradients(self, sigmas):
+        """
+        Calculates the gradient of the log probability of the Plackett-Luce model
+        :param w_log: log of the weights (length n)
+        :param sigmas: list of sampled permutations (length nb_samples_lambda)
+        :return: gradient of the log probability of the Plackett-Luce model. Shape: (nb_samples_lambda, n)
+        """
+        return VanillaPdf.calc_w_log_ps(self.w_log, sigmas)
+
+    def normalize_w_log(self):
+        # normalize (not in paper, but i hope it helps against numerical problems)
+        w = np.exp(self.w_log)
+        w /= np.sum(w)
+        self.w_log = np.log(w)
+
+
+class ConditionalPdf(PdfRepresentation):
+    def __init__(self, n, w_log=None):
+        # W[i, j] is P(i | j)
+        if w_log is None:
+            w_log = np.zeros((n, n))
+            print("*" * 80)
+            print("w_log is None, initializing with zeros!")
+            print("*" * 80)
+        else:
+            assert w_log.shape == (n, n)
+        super().__init__(n, w_log)
+
+    def sample_first_node(self):
+        # sample first node from uniform distribution
+        # return np.random.choice(self.n, size=1, replace=False)[0]
+        # TODO
+        return 0
+
+    def sample_node_given(self, j, permutation_so_far):
+        """
+        Samples a permutation given the previous node
+        :param j: the previously sampled node
+        :param permutation_so_far: the permutation so far, i.e. the first L-1 nodes.
+        Those nodes are fixed and will not be sampled again.
+        """
+        # return only single node
+        w_log_giv_j = self.w_log[:, j]
+        w_giv_j = np.exp(w_log_giv_j)
+
+        # remove nodes that are already in the permutation
+        w_giv_j[permutation_so_far] = 0
+
+        probabilities = w_giv_j / np.sum(w_giv_j)
+        # sample one node from the marginal distribution
+        node = np.random.choice(self.n, size=1, replace=False, p=probabilities)[0]
+        return node
+
+    def sample_permutation(self):
+        permutation = np.zeros(self.n, dtype=int)
+        permutation[0] = self.sample_first_node()
+
+        # permutation[1:] = np.array(
+        #     [self.sample_node_given(permutation[i - 1], permutation[:i]) for i in range(1, self.n)])
+
+        for i in range(1, self.n):
+            permutation[i] = self.sample_node_given(permutation[i - 1], permutation[:i])
+
+        return permutation
+
+    def sample_permutations(self, nb_samples_lambda):
+        permutations = np.array([self.sample_permutation() for _ in range(nb_samples_lambda)])
+        return permutations
+
+    @staticmethod
+    def calc_w_log_p_partial(w_log, sigma, t):
+        """
+        Calculates the partial derivative of the log probability of the Plackett-Luce model
+        :param sigma: shape: (n)
+        :param i: index of the sample
+        :return: shape (1)
+        """
+        w = np.exp(w_log)  # (n, n)
+        t_prev = sigma[t - 1]  # previously sampled node
+        if t > 0:
+            sums = [np.sum(w[sigma[k:], t_prev]) for k in range(t)]
+            intermediate_result = np.sum([1 / sum for sum in sums])
+            partial = 1 - w[sigma[t], t_prev] * intermediate_result
+            return partial  # single value
+        else:
+            return 1
+
+    @staticmethod
+    def inner_loop(i, sigmas, w_log, n):
+        """
+        Calculates the gradient for a single sample sigma[i]
+        :param i: index of the sample
+        :param sigmas: shape: (nb_samples_lambda, n)
+        :return: shape: (n)
+        """
+
+        # now for w_log (n, n)
+        gradient = np.zeros_like(w_log)  # (n, n)
+        for t in range(1, n):  # Skip first node, because it is fixed
+            # TODO: very whether starting at 1 is ok and so on. (maybe W mtx should be smaller)
+            permutation = sigmas[i]
+            # assert that permutation consists of unique elements
+            # assert len(permutation) == len(np.unique(permutation)) # TODO
+            node_t = permutation[t]
+            node_t_prev = permutation[t - 1]
+
+            # if node_t == node_t_prev:
+            #     print("WARNING: node_t == node_t_prev")
+            # assert node_t != node_t_prev
+            # todo
+            gradient[node_t, node_t_prev] = ConditionalPdf.calc_w_log_p_partial(w_log, permutation, t)
+
+        # if not np.allclose(np.diag(gradient), np.zeros_like(np.diag(gradient))):
+        #     print("WARNING: diagonal elements are not zero!")
+        #     print(np.diag(gradient))
+        # assert np.allclose(np.diag(gradient), np.zeros_like(np.diag(gradient)))
+        # TODO
+
+        return gradient
+
+    @staticmethod
+    def calc_w_log_ps(w_log, sigmas):
+        # Calculates all partial derivatives for a list of samples sigmas
+        # Partial derivates that are not relevant (eg delta_w(i | j != i-1) are set to zero
+        n = len(sigmas[0])
+        nb_samples_lambda = len(sigmas)
+
+        # lambd * (n * n)
+        gradients = np.zeros((nb_samples_lambda, n, n))
+        sample_indices = np.arange(nb_samples_lambda)
+        gradients[sample_indices] = np.array(
+            # Calculate the (n*n) partial derivatives for each sample
+            [ConditionalPdf.inner_loop(i, sigmas, w_log, n) for i in range(nb_samples_lambda)])
+
+        return gradients  # shape: (nb_samples_lambda, (n, n))
+
+    def calc_gradients(self, sigmas):
+        """
+        Calculates the gradient of the log probability of the Plackett-Luce model
+        :param w_log: log of the weights (length n)
+        :param sigmas: list of sampled permutations (length nb_samples_lambda)
+        :return: gradient of the log probability of the Plackett-Luce model. Shape: (nb_samples_lambda, n)
+        """
+        return ConditionalPdf.calc_w_log_ps(self.w_log, sigmas)
+
+    def normalize_w_log(self):
+        # normalize (not in paper, but i hope it helps against numerical problems)
+        w = np.exp(self.w_log)
+        # except for diagonal elements
+        w[np.diag_indices_from(w)] = 0
+
+        # except row 0 TODO: this assumes that the first node is fixed
+        w[0] = 0
+
+        # check if colums are non-zero
+        # if not np.allclose(np.sum(w, axis=0), np.ones_like(np.sum(w, axis=0))):
+        #     print("WARNING: columns do not sum to one!")
+        #     print(np.sum(w, axis=0))
+        #
+        #     idx = np.where(np.isclose(np.sum(w, axis=0), 0))
+        #     print("WARNING: columns with zero sum:")
+        #     print(idx)
+
+        sums = np.sum(w, axis=0)
+        idx = np.where(np.isclose(sums, 0))
+        if len(idx[0]) > 0:
+            print("WARNING: columns do not sum to one!")
+            print(sums)
+            print("WARNING: columns with zero sum:")
+            print(idx)
+        # normalize each column
+        w /= (np.sum(w, axis=0) + 1e-10)
+
+        # avoids log(0) warning
+        w[np.diag_indices_from(w)] = 1
+        w[0] = 1
+        self.w_log = np.log(w)
+
+
+class PlackettLuce:
+    def __init__(self, U, benchmark):
+        assert callable(U)
+
+        self.U = U
+        self.benchmark = benchmark
+
+    @staticmethod
+    def U_identity(xs):
+        return xs
+
+    @staticmethod
+    def U_normalize(xs):
+        return xs / np.sum(xs)
+
+    @staticmethod
+    def U_super_linear(xs):  # xs are fitnesses
+        # Sort the samples from the best to the worst in
+        # terms of fitness and set 𝜇 = 𝜆/2. Assign null utility to the 𝜇 worst
+        # samples, while, for the remaining ones, temporarily assign to the
+        # 𝑖–th best sample exp(𝑖) points of utility and, finally, normalize the
+        # utilities of the best 𝜇 samples. This utility function makes PL-GS
+        # invariant for monotonic transformations of the objective function
+        # and it is inspired by weights used in the CMA-ES algorithm [16].
+
+        # in case of minimization:
+        # mu = len(xs) / 2
+        # sorted_indices = np.argsort(xs)
+        # adjusted_xs = np.zeros_like(xs)
+        # adjusted_xs[sorted_indices[:int(mu)]] = 0
+        # adjusted_xs[sorted_indices[int(mu):]] = np.exp(xs[sorted_indices[int(mu):]])
+        # adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
+
+        # for maximisation:
+        mu = len(xs) / 2
+        sorted_indices = np.argsort(xs)
+        adjusted_xs = np.zeros_like(xs)
+        adjusted_xs[sorted_indices[:int(mu)]] = np.exp(xs[sorted_indices[:int(mu)]])
+        adjusted_xs[sorted_indices[int(mu):]] = 0  # now final ones are the worst
+        adjusted_xs = adjusted_xs / np.sum(adjusted_xs)
+
+        # not implemented error
+        raise NotImplementedError("Not implemented yet")
+
+        return adjusted_xs
+
+    @staticmethod
+    def calc_w_log_F(U, fitnesses, delta_w_log_ps, nb_samples_lambda, ):
+        f_vals = U(fitnesses)  # list of scalar with len nb_samples_lambda
+        assert len(f_vals) == nb_samples_lambda
+        assert len(delta_w_log_ps) == nb_samples_lambda
+
+        # f_vals: shape (nb_samples_lambda)
+        # delta_w_log_ps: shape (nb_samples_lambda, (n, n))
+
+        # only for vanilla pdf (when delta_w_log_ps is a vector)
+        # gradient = np.dot(f_vals, delta_w_log_ps)  # f_vals is a vector, delta_w_log_ps is a matrix
+        # gradient /= nb_samples_lambda  # TODO: I think authors dont do this it in their code
+
+        # for conditional pdf (when delta_w_log_ps is a matrix)
+        gradient = np.zeros_like(delta_w_log_ps[0])
+        for i in range(nb_samples_lambda):
+            f_val = f_vals[i]  # scalar
+            delta_w_log_p = delta_w_log_ps[i]  # (n, n)
+
+            # only applicable for conditional pdf
+            # assert diagonal elements are zero
+            # if not np.allclose(np.diag(delta_w_log_p), np.zeros_like(np.diag(delta_w_log_p))):
+            #     print("WARNING: diagonal elements are not zero!")
+            #     print(np.diag(delta_w_log_p))
+            # assert np.allclose(np.diag(delta_w_log_p), np.zeros_like(np.diag(delta_w_log_p)))
+
+            gradient += f_val * delta_w_log_p
+
+        gradient /= nb_samples_lambda
+
+        return gradient
 
 
 class EvolAlgorithm(AbstractAlgorithm):
@@ -1167,13 +1570,75 @@ class Variation:
         return offsprings_wo_zeros
 
 
+class Utility:
+
+    def __init__(self, reporter, keep_running_until_timeup, numIters):
+        self.reporter = reporter
+        self.keep_running_until_timeup = keep_running_until_timeup
+        self.numIters = numIters
+
+    @staticmethod
+    def print_score(ctr, best_fitness, avg_fitness, frequency=10, avg_dist_func=None, fitnesses_shared=None,
+                    island=None):
+        # avg_dist_func can only be used if fitnesses_shared is not None
+        assert (avg_dist_func is None) or (fitnesses_shared is not None)
+
+        if ctr % frequency == 0:
+            if callable(avg_dist_func):
+                assert island is not None
+                average_distance = avg_dist_func()
+                avg_fitness_shared = np.mean(fitnesses_shared)
+                print(
+                    f"Isl: {island.identifier}, iter: {ctr} \t best fitness: {best_fitness:_.4f}, "
+                    f"avg fitness: {avg_fitness:_.4f}, fit shared: {avg_fitness_shared:_.4f}, avg dist: {average_distance:_.4f} "
+                    f"\t[{island.crossover.__name__} {island.mutation.__name__}]"
+                )
+            else:
+                print(f"{ctr} \t best fitness: {best_fitness:_.4f}, avg fitness: {avg_fitness:_.4f}")
+
+    @staticmethod
+    def print_mtx(mtx, ctr, frequency=10, sub_mtx=None):
+        if sub_mtx is not None:
+            mtx = mtx[:, :sub_mtx]
+
+        if ctr % frequency == 0:
+            for i in range(len(mtx)):
+                temp = np.array([f'{a:.4f}' for a in mtx[i]])
+                print(" ".join(temp))
+            print()
+            print()
+            print()
+
+    @staticmethod
+    def print_array(arr, ctr, frequency=10):
+        if ctr % frequency == 0:
+            w_exp = np.array([f'{a:.4f}' for a in arr])
+            print(w_exp)
+
+    @staticmethod
+    def print_array_2d(arr, ctr, frequency=10):
+        if ctr % frequency == 0:
+            for i in range(len(arr)):
+                temp = np.array([f'{a:.2f}' for a in arr[i]])
+                print(" ".join(temp))
+            print()
+            print()
+            print()
+
+    def is_done_and_report(self, i, meanObjective, bestObjective, bestSolution, write_to_file):
+        timeLeft = self.reporter.report(meanObjective, bestObjective, bestSolution, write_to_file)
+        time_over = (timeLeft < 0 and self.keep_running_until_timeup)
+        iters_over = i > self.numIters
+        return (time_over or iters_over), timeLeft
+
+
 class ScoreTracker:
     def __init__(self, n, maximize, keep_running_until_timeup, numIters, reporter_name, benchmark, second_filename,
                  max_duration=None):
         self.maximize = maximize
         self.all_time_best_fitness = -np.inf if maximize else np.inf
         self.all_time_sigma_best = np.zeros(n, dtype=np.int64)
-        reporter = Reporter.Reporter(reporter_name, second_filename, max_duration=max_duration)
+        reporter = Reporter(reporter_name, second_filename, max_duration=max_duration)
         self.utility = Utility(reporter, keep_running_until_timeup, numIters)
         self.benchmark = benchmark
 
@@ -1336,6 +1801,7 @@ class AlgorithmWrapper:
         print("*******************************************************************")
         print("Running experiment with parameters:")
         print(hyperparams.__dict__)
+        best_fitness = 0
 
         # csv_filename is based on hyperparams and benchmark_filename
         GraphPlotter.mkdir(f"./pl/{benchmark_filename[:-4]}")
@@ -1743,7 +2209,7 @@ class GraphPlotter:
 class r0698535:
     def __init__(self):
         self.reporter_name = self.__class__.__name__
-        self.run_plackett_luce = False
+        self.run_plackett_luce = False  # otherwise run evol algorithm (evol algor is final algor used for performance evaluation)
 
     def optimize(self, filename):
         if self.run_plackett_luce:
@@ -1754,13 +2220,12 @@ class r0698535:
             # pdf: PdfRepresentation = ConditionalPdf(n=50)
             hyperparams = HyperparamsPlackettLuceAlgorithm(pdf)
             return AlgorithmWrapper.run_experiment_plackett_luce(hyperparams, benchmark_filename, pdf,
-                                                                 self.reporter_name)
+                                                                 self.reporter_name)  # runs for 60 seconds
 
         else:  # run evol algorithm
             if filename.endswith("tour50.csv"):
                 benchmark_filename = filename
                 hyperparams = HyperparamsEvolAlgorithm()
-                # *****./tour50.csv********* BEST PARAMS *****
                 hyperparams.popul_size = 50
                 hyperparams.offspring_size_multiplier = 1  # 3
                 hyperparams.k = 3
@@ -1847,7 +2312,7 @@ class r0698535:
 
                 return AlgorithmWrapper.repeat_experiment(hyperparams, benchmark_filename,
                                                           reporter_name=self.reporter_name, nb_repeats=1,
-                                                          max_duration=None)
+                                                          max_duration=None) # will run for 5 minutes (default)
 
 
 if __name__ == "__main__":

@@ -98,8 +98,8 @@
 	\item \textbf{Local search} \\
 			Two-opt, Insert node at random location.
 	
-	\item \textbf{Phase based convergence} \\
-		Split optimization in \textbf{exploration phase (1)} for first half of the run (eg 2.5 minutes) and then go over to \textbf{exploitative convergence phase (2)} for remaining duration.
+	\item \textbf{Phase-based convergence} \\
+		Split optimization in \textbf{exploration phase (1)} for first half of the run (eg 2.5 minutes) and then go over to \textbf{exploitative convergence phase (2)} for the remaining duration.
 		
 	\item No self-adaptation or multi-objective optimization.
 	\end{enumerate}
@@ -107,7 +107,7 @@
 	\item \textbf{Plackett-Luce Gradient Search (PL-GS) model}: For this part, the base evolutionary algorithm is discarded and an algorithm based on gradient descent in the discrete domain (proposed by \citep{ceberiojosu_model-based_2023, santucci_gradient_2020}) is used instead. This part includes the following efforts:
 		\begin{enumerate}
 			\item Reproduce the results from their paper to their benchmark. This includes writing entire source code, which was not publicly available.
-			\item Apply the PL-GS model to the TSP.
+			\item Apply the PL-GS model to the Traveling Salesman Problem (TSP).
 			\item Explore alternative representations to represent Probability Mass Function (PMF) in PL-GS (based on Probabilistic Graphical Models).
 		\end{enumerate}
 	
@@ -123,13 +123,13 @@
 
 
 \subsection{The three main features}
-	%\ReplaceMe{List the three main components of your evolutionary algorithm for this project. That is, what are its most distinctive characteristics, what components am I not allowed to change to a more basic version? Ideally these are some of the more advanced features that you added since \switch{the group phase}{your previous submission}.}
+	%\ReplaceMe{List the three main components of your evolutionary algorithm for this project. That is, what are its most distinctive characteristics, what components am I not allowed to change to a more basic version? Ideally, these are some of the more advanced features that you added since \switch{the group phase}{your previous submission}.}
 
 	\begin{enumerate}
-	\item Order-crossover (only edge crossover is too exploitative, having a single child based on mutual edges from two parents resulted in too quick convergence to sub-optimal. Instead order-crossover obtains 2 children per two parents, which ensured that population didn't convergence to same path.)
+	\item Order-crossover (only edge crossover is too exploitative, having a single child based on mutual edges from two parents resulted in too quick convergence to sub-optimal. Instead, order-crossover, obtains 2 children per two parents, which ensures that population doesn't convergence to same path.)
 	\item Significant performance improvement through \textbf{local search} and \textbf{fitness sharing}.
-	\item Phase based convergence \\
-		- Encouraging diversity (due to multiple islands running in tandem and order-crossover creating larger populations) results in large computational costs, possibly hurting performance. Instead, we allow for an explorative scheme through multiple islands in the first phase (with migration and so on). In the second phase, islands merge to a single island, preserving only the candidate solutions that survive the elimination procedure. We also only run edge-crossover during this phase as it is a more greedy procedure, converging faster.
+	\item Phase-based convergence \\
+		- Encouraging diversity (due to multiple islands running in tandem and order-crossover creating larger populations) results in large computational costs, possibly hurting performance. Instead, we allow for an explorative scheme through multiple islands in the first phase (with migration and so on). In the second phase, islands merge to a single island, preserving only the candidate solutions that survive the elimination procedure. Additionally, we only run edge-crossover during this phase as it is a more greedy procedure, converging faster.
 	\end{enumerate}
 	
 	
@@ -137,7 +137,7 @@
 
 \subsection{The main loop}
 	%\ReplaceMe{Make a picture of the ``flow'' in your evolutionary algorithm, similar to the example below. Include all the main components (mutation, recombination, selection, elimination, initialization, local search operators, diversity promotion mechanisms). There are no formal requirements on how to do this, as long as it is clear and you can efficiently explain your complete evolutionary algorithm using this picture at the exam. Contrary to the picture below, include the specific techniques, e.g., top-$\lambda$ elimination, $k$-tournament selection, where possible.}
-	We solely provide a figure for the genetic algorithm. Since  PL-GS algorithm does not fit in the ``selection, variation, evaluation"-scheme, we believe a high-level view of the pseudo code is more insightful.
+	We solely provide a figure for the genetic algorithm. Since the PL-GS algorithm does not fit in the ``selection, variation, evaluation"-scheme, we believe a high-level view of the pseudo-code is more insightful.
 	
 	\begin{figure}[h]
 		\centering
@@ -145,8 +145,7 @@
 			\includegraphics[width=\linewidth, trim={4cm 6cm 4cm 6cm}, clip]{phase1.pdf}
 			\caption{Phase 1: Explorative with multiple islands and mostly order crossover.}
 			\label{fig:croppedfile1}
-		\end{subfigure}
-		reffill
+		\end{subfigure} 
 		\begin{subfigure}{0.45\textwidth}
 			\includegraphics[width=\linewidth, trim={4cm 6cm 4cm 6cm}, clip]{phase2.pdf}
 			\caption{Phase 2: Exploitative with single island and only edge crossover and scramble mutation.}
@@ -162,7 +161,7 @@
 	%\ReplaceMe{How do you represent the candidate solutions? What is your motivation to choose this one? What other options did you consider? How did you implement this specifically in Python (e.g., a list, set, numpy array, etc)?}
 	
 	In both algorithms (Genetic algorithm and PL-GS), a route is indirectly represented using the adjacency representation $\sigma = \left( \sigma(1), \sigma(2) \dots, \sigma(n) \right) \in \mathbb{S}^n$, where $\mathbb{S}^n$ represents the set of all permutations of length $n$.\\
-	\textbf{Note:} Implementation-wise, the permutations will be represented as numpy arrays with length $n-1$. The length can be set to $n-1$ by implicitly inferring that all representations start from city 1, hence this number does not need to be stored in the numpy array. This decision was made to enable a more computationally efficient implementation of constructing the ``edge-table" (used in edge crossover and when computing the distance of a node to another in fitness sharing). \textbf{WHY??}
+	\textbf{Note:} Implementation-wise, the permutations will be represented as numpy arrays with length $n-1$. The length can be set to $n-1$ by implicitly inferring that all representations start from city 1, hence this number does not need to be stored in the numpy array. This decision was made to enable a more computationally efficient implementation of constructing the ``edge-table" (used in edge crossover and when computing the distance of a node to another in fitness sharing). %\textbf{WHY??}
 	
 	As discussed in the group report, we considered the cycle notation as representation. Although this is the exact representation required for the edge list in the crossover procedure, it posed challenges in ensuring that the path is a single cycle. We thus chose the first representation because we presumed that the performance cost of computing an edge table would be more manageable than having to deal with the overhead of invalid individuals.
 	
@@ -172,7 +171,7 @@
 	In both algorithms, population initialization is carried out randomly. Notes depending on the algorithm:
 		\begin{enumerate}
 			\item \textbf{Genetic algorithm}: \\
-			Individuals are defined as random permutations, that do not pass through the same city twice. \textbf{No local search is applied during initialization}. We assume local search would be helpful at the start to remove infinity edges and give a small push towards the right solution. However, for the larger routes (e.g. 750 or 1000) our local search operators are quite computationally expensive. Instead, by a trick to the weights of infinite edges (see the paragraph below), enabling to compare distances between the number of infinity edges, we can get away with not applying local search in the first round. Being able to avoid the computational cost from local search at the start is nice for computational reasons, but also ensures that we do not need to think about whether local search would push all populations from each island into too narrow regions, resulting in faster convergence in the beginning but a sub-optimal solution in the end. Local search will be applied at every iteration afterwards. 
+			Individuals are defined as random permutations, that do not pass through the same city twice. \textbf{No local search is applied during initialization}. We assume local search would be helpful at the start to remove infinity edges and give a small push towards the right solution. However, for the larger routes (e.g. 750 or 1000) our local search operators are quite computationally expensive. Instead, by a trick to the weights of infinite edges (see the paragraph below), enabling us to compare distances between the number of infinity edges, we can get away with not applying local search in the first round. Being able to avoid the computational cost from local search at the start is nice for computational reasons, but also ensures that we do not need to think about whether local search would push all populations from each island into too narrow regions, resulting in faster convergence in the beginning but a sub-optimal solution in the end. Local search will be applied at every iteration afterwards. 
 			\textbf{\item PL-GS}:\\
 			Initialization of the population $\{ \sigma^{(1)} \dots \sigma^{(\lambda)} \} $ is dependent on the definition of $p_\mathbf{w}(\cdot)$, which by default is defined as a uniform categorical distribution. Implementation-wise this is done by defining $\mathbf{w}$ as a numpy array containing $n$ zeros. \\
 			\textbf{Alternative representations:} Although not explored in this project, an island model could be considered in combination with the PL-GS algorithm, each with a different initialization for $p_\mathbf{w}$ than the uniform distribution. This allows for easily searching different regions of the solution space. The island model in combination with PL-GS was not explored because a migration procedure is not trivial to apply to probability density functions.
@@ -185,7 +184,7 @@
 	\item An infinite edge $D_{ij}$ is replaced by a real value according to the following equation:
 	$$D_{ij} \leftarrow \text{largest non-inf edge} \times n $$
 	As such, we can compare paths containing infinite edges based on how many infinite edges they have. By multiplying by $n$ in the equation, we ensure that choosing a path without infinite edges is always better than a path with infinite edges, regardless of how long the non-infinite path may be. This enables faster convergence in the early stages of the algorithm.
-	\item Secondly, since in the PL-GS algorithm updates parameter updates are based on how large $f$ outcomes are, we normalize by dividing each edge distance by the largest non-infinite value. This also helps to prevent overflow errors caused by exploding gradients. Normalization is only applied in PL-GS.	
+	\item Secondly, since in the PL-GS algorithm parameter updates are based on how large $f$ outcomes are, we normalize by dividing each edge distance by the largest non-infinite value. This also helps to prevent overflow errors caused by exploding gradients. Normalization is only applied in PL-GS.	
 	\end{enumerate}
 
 	%\ReplaceMe{How do you initialize the population? How did you determine the number of individuals? Did you implement advanced initialization mechanisms (local search operators, heuristic solutions)? If so, describe them. Do you believe your approach maintains sufficient diversity? How do you ensure that your population enrichment scheme does not immediately take over the population? Did you implement other initialization schemes that did not make it to the final version? Why did you discard them? How did you determine the population size?}
@@ -193,15 +192,10 @@
 
 
 \subsection{Selection Operators}
-
-	\textbf{Evolutionary Algorithm:}
 	The selection process, k-tournament with replacement, remains unchanged from the group project. The value of the parameter $k$ is predetermined and remains constant for a specific TSP, such as 750 or 1000 tours. While it is possible to extend the selection operators by adjusting $k$ dynamically, for instance, starting with a low $k$ for more randomness and gradually increasing it towards the end for a higher probability that the good candidates are always selected, we opted not to pursue this approach. This decision is based on the fact that we did not assign the responsibility of managing population diversity or promoting exploitation to the selection process. These aspects are already taken care off by other components in our algorithm, such as fitness sharing for diversity, local search for exploitation, and the phase-based convergence scheme (that works with varying numbers of islands and crossover functions depending on the need for diversity or exploitation). Moreover, maintaining a constant selection scheme adds predictability to the algorithm, in contrast to introducing a parameter that changes smoothly over time.
 
 		
-	\textbf{Note for future work in the PL-GS algorithm:}
-	Although, selection is not directly applicable to PL-GS, one could pose the question which samples are allowed to influence the gradient $\nabla F\left(\mathbf{w}\right)$, used to update $\mathbf{w}$:
-	$$\mathbf{w} \leftarrow \mathbf{w} - \eta \nabla F\left(\mathbf{w}\right)$$
-	By default all $\{ \sigma^{(1)} \dots \sigma^{(\lambda)} \} $ are used with equal weighting. However, also here, selection procedures such as k-tournament could be applied to, for instance only select the good samples to update $\mathbf{w}$.
+
 	
 	
 	%\ReplaceMe{Which selection operators did you implement? If they are not from the slides, describe them. Can you motivate why you chose this one? Are there parameters that need to be chosen? Did you use an advanced scheme to vary these parameters throughout the iterations? Did you try other selection operators not included in the final version? Why did you discard them?}
@@ -211,20 +205,20 @@
 	\textbf{Evolutionary Algorithm:}
 	We considered the following three mutation operators: \textbf{Inverse mutation, swap mutation and scramble mutation}. We observed that scramble mutation resulted in slightly better results compared to the other two algorithms. We therefore choose the following scheme: 
 	\begin{enumerate}
-		\item Phase 1) Three islands run in tandem, each with their own mutation operator. The mutation rate remains fixed and is identical for each island.
+		\item Phase 1) Three islands run in tandem, each with its own mutation operator. The mutation rate remains fixed and is identical for each island.
 		\item Phase 2) At the beginning of phase 2, the islands merge and the best mutation operator is preserved (scramble mutation in this case).
 	\end{enumerate}
-	Although we observed better results using scramble mutation, we preserve the other mutation techniques in phase one to encourage islands to explore different regions. The mutation rate percentage is a parameter is decided upfront, dependent on the number of tours.
+	Although we observed better results using scramble mutation, we preserved the other mutation techniques in phase one, encouraging islands to explore different regions. The mutation rate percentage is a parameter that is decided upfront, dependent on the number of tours.
 	
 
 	%\ReplaceMe{Which mutation operators did you implement? If they are not from the slides, describe them. How do you choose among several mutation operators? Do you believe it will introduce sufficient randomness? Can that be controlled with parameters? Do you use self-adaptivity? Do you use any other advanced parameter control mechanisms (e.g., variable across iterations)? Did you try other mutation operators not included in the final version? Why did you discard them?}
 
 \subsection{Recombination operators}
-	In the group project we used \textbf{edge crossover} because the technique choose the mutual edges between two parents, such that the ``good properties" from a candidate would be preserved into the offspring. While being a good exploitative technique, from preliminary testing we observed that the entire population quickly converged to a single candidate solution, even after introducing other diversity mechanisms such as islands and fitness sharing. To combat this premature convergence, we introduced \textbf{order crossover} as well. Order crossover can create two offsprings from two parents, while aiming to preserve the relative order from the parents. In our experiments we observed that this less exploitative technique delays the entire population from converging to a single individual as quickly.
+	In the group project, we used \textbf{edge crossover} because the technique chooses the mutual edges between two parents, such that the ``good properties" from a candidate would be preserved into the offspring. While being a good exploitative technique, from preliminary testing we observed that the entire population quickly converged to a single candidate solution, even after introducing other diversity mechanisms such as islands and fitness sharing. To combat this premature convergence, we introduced \textbf{order crossover} as well. Order crossover can create two offspring from two parents, while aiming to preserve the relative order from the parents. In our experiments, we observed that this less exploitative technique delays the entire population from converging to a single individual as quickly.
 	
 	Based on these findings, we apply the following scheme:
 	\begin{enumerate}
-		\item Phase 1) All three islands have 80\% of applying order crossover (for diversity) and 20\% of edge crossover (for exploitation). Order crossover creates twice the number of offsprings than edge crossover, but the elimination procedure then reduces the offspring population to the required population size.
+		\item Phase 1) All three islands have 80\% of applying order crossover (for diversity) and 20\% of edge crossover (for exploitation). Order crossover creates twice the number of offspring than edge crossover, but the elimination procedure then reduces the offspring population to the required population size.
 		\item Phase 2) The objective is now to obtain a single and optimal candidate. Hence in phase 2) edge crossover is constantly applied.
 	\end{enumerate}
 
@@ -236,23 +230,23 @@
 	
 	The elimination operator remains k-tournament selection (without replacement), as in the group project. The parameter $k$ is set to the same value as in selection. Elimination also considers the parents.
 	
-	Although we did not explore it in this project, another interesting technique would be age based elimination. This would be less computationally demanding, and the possible dangers of bad offsprings are already reduced by local search. Using age based elimination would allow us to compute local search only for the candidate solutions that are guaranteed to go through. In our current elimination operator (k-tournament), we risk creating offsprings and applying expensive local search procedures to offsprings that are not surviving the following rounds.
+	Although we did not explore it in this project, another interesting technique would be age-based elimination. This would be less computationally demanding, and the possible dangers of bad offspring are already reduced by local search. Using age-based elimination would allow us to compute local search only for the candidate solutions that are guaranteed to go through. In our current elimination operator (k-tournament), we risk creating offspring and applying expensive local search procedures to offspring that do not survive the following rounds.
 	
 
 \subsection{Local search operators} \label{cha:local search}
 	We consider three operators:
 	\begin{enumerate}
-		\item \textbf{Two-opt:} our implementation is based on the pseudo-code found on online\footnote{https://en.wikipedia.org/wiki/2-opt}. There are two implementations to consider, two-opt for symmetric matrices or asymmetric matrices. Although in theory, the symmetric variant is not applicable to our TSP, we observed it still significantly improved performance, while being much easier to compute than in the asymmetric case. Hence, we use the efficient two-opt for symmetric distance matrices, choosing two nodes swapping them, and reversing the path between the two nodes.
+		\item \textbf{Two-opt:} our implementation is based on the pseudo-code found online\footnote{https://en.wikipedia.org/wiki/2-opt}. There are two implementations to consider, two-opt for symmetric matrices or for asymmetric matrices. Although in theory, the symmetric variant is not applicable to our TSP, we observed it still significantly improved performance, while being much easier to compute than in the asymmetric case. Hence, we use the efficient two-opt for symmetric distance matrices, choosing two nodes, swapping them, and reversing the path between the two nodes.
 		
 		\item \textbf{Insert node at random location:}\\
-		\textbf{Motivation:} since the our two-opt implementation in theory is not guaranteed to actually improve candidate solutions (due to symmetric distance matrix assumption), we also experiment with other local search procedures, that ensure a correct transformation, while remaining relatively easy to compute (in contrast to two-opt in the asymmetric case). \\
-		\textbf{Explanation:} Given a permutation $\sigma$, this procedure considers a subset of random node pairs $\left(a = \sigma(i), b = \sigma(j)\right)$ with $i \neq j$. For each pair, the procedure verifies if inserting $b$ just in front $a$ results in a better fitness (this can be calculated in constant time, not linear), and if performance is improved, the node is inserted, resulting in the original nodes $\sigma(i+1) \dots \sigma(j-1)$ to be moved one step to the right. The subset size is a parameter determined upfront.
+		\textbf{Motivation:} since our two-opt implementation is in theory not guaranteed to actually improve candidate solutions (due to symmetric distance matrix assumption), we also experiment with other local search procedures, that ensure a correct transformation, while remaining relatively easy to compute (in contrast to two-opt in the asymmetric case). \\
+		\textbf{Explanation:} Given a permutation $\sigma$, this procedure considers a subset of random node pairs $\left(a = \sigma(i), b = \sigma(j)\right)$ with $i \neq j$. For each pair, the procedure verifies if inserting $b$ just in front $a$ results in a better fitness (this can be calculated in constant time, not linear). If performance is improved, the node is inserted, resulting in the original nodes $\sigma(i+1) \dots \sigma(j-1)$ being moved one step to the right. The subset size is a parameter determined upfront.
 
 		\item \textbf{PL-GS:} \\
-		\textbf{Motivation:} the algorithm (discussed in section \ref{cha:pl-gs}), although initially introduced as a standalone evolutionary algorithm by \citeauthor{santucci_gradient_2020}, could in theory also be used as local search operator for a single $\sigma$. By default PL-GS results in finding a PMF $p_\mathbf{w}(\cdot)$ where sampling from it should give us a $\sigma$ for which $f(\sigma)$ is good. If we start the algorithm, not from the uniform categorical distribution $p_\mathbf{w}(\cdot)$, but instead define $\mathbf{w}$ s.t. $p_\mathbf{w}(\cdot)$ is high for $\sigma$ and low for other routes, applying the PL-GS algorithm for a few steps, would result in similar samples to $\sigma$ which are hopefully better. \\
-		Implementation-wise, given $\sigma = \left( \sigma(1), \sigma(2), \sigma(3),~\dots,~\sigma(n) \right)$, then $p_\mathbf{w}(\cdot)$ can be initialized by defining $\mathbf{w}_{\sigma(1)} = 1,~\mathbf{w}_{\sigma(2)} = \frac{1}{2},~\dots,~\mathbf{w}_{\sigma(n)} = \frac{1}{n}$, where $\mathbf{w}_i$ refers to the $i$'th component in the vector $\mathbf{w}$. Although the idea seems appealingin theory, our preliminary tests have shown that the PL-GS converges slowly, and a simple two-opt procedure obtains better results in a shorter duration. We therefore do not consider it as part of the final algorithm.
+		\textbf{Motivation:} the algorithm (discussed in section \ref{cha:pl-gs}), although initially introduced as a standalone evolutionary algorithm by \citeauthor{santucci_gradient_2020}, could in theory also be used a as local search operator for a single $\sigma$. By default PL-GS results in finding a PMF $p_\mathbf{w}(\cdot)$ where sampling from it should give us a $\sigma$ for which $f(\sigma)$ is good. If we start the algorithm, not from the uniform categorical distribution $p_\mathbf{w}(\cdot)$, but instead, define $\mathbf{w}$ s.t. $p_\mathbf{w}(\cdot)$ is high for $\sigma$ and low for other routes, applying the PL-GS algorithm for a few steps, would result in similar samples to $\sigma$ which are hopefully better. \\
+		Implementation-wise, given $\sigma = \left( \sigma(1), \sigma(2), \sigma(3),~\dots,~\sigma(n) \right)$, then $p_\mathbf{w}(\cdot)$ can be initialized by defining $\mathbf{w}_{\sigma(1)} = 1,~\mathbf{w}_{\sigma(2)} = \frac{1}{2},~\dots,~\mathbf{w}_{\sigma(n)} = \frac{1}{n}$, where $\mathbf{w}_i$ refers to the $i$'th component in the vector $\mathbf{w}$. Although the idea seems appealing in theory, our preliminary tests have shown that the PL-GS converges slowly, and a simple two-opt procedure obtains better results in a shorter duration. We therefore do not consider it as part of the final algorithm.
 	\end{enumerate}
-	A single local search operator and its respective tuning parameters are predetermined dependent on the TSP.
+	A single local search operator and its respective tuning parameters are predetermined and dependent on the TSP.
 		
 
 
@@ -261,20 +255,27 @@
 \subsection{Diversity promotion mechanisms} \label{cha:diversity}
 	%\ReplaceMe{Did you implement a diversity promotion scheme? If yes, which one? If no, why not? Describe the mechanism you implemented. In what sense does the mechanism improve the performance of your evolutionary algorithm? Are there parameters that need to be determined? Did you use an advanced scheme to determine them?}
 	
-	\textbf{Evolutionary Algorithm:}
 	\begin{enumerate}
 		\item \textbf{Fitness sharing} \\
 		The distance metric $d$ is defined as follows: 
 		$$d(\sigma_1, \sigma_2) = n - \# \text{mutual edges}(\sigma_1, \sigma_2)$$
 		Here, $n$ refers to the number of nodes. Hence, by constructing an edge table for $\sigma_1$, $~d(\sigma_1, \sigma_2)$ can be computed in linear time complexity.
-		We fix $\sigma_{\text{share}} = n$, s.t. given a candidate solution $\sigma$, its shared fitness score is dependent on the distance to every other node in the population. Setting $\sigma_{\text{share}} < n$ resulted in unpredictable results, as sometimes $\sigma$ would be punished, and sometimes not. The parameter $\alpha$ is determined dependent on the TSP.
-		\textbf{+ argument TODO } also scared that 2 good candidate (but similar) solutions would both be punished too hard, resulting in only bad but different candidates to survive selection.
-		\textbf{TODO: subpopulations}
+		We fix $\sigma_{\text{share}} = n$, s.t. given a candidate solution $\sigma$, its shared fitness score is dependent on the distance to every other node in the population. Setting $\sigma_{\text{share}} < n$ resulted in unpredictable results, as sometimes $\sigma$ would be punished, and sometimes not. The parameter $\alpha$ is determined dependent on the number of tours (e.g.: 50 or 750).
+		%\textbf{+ argument TODO } also scared that 2 good candidate (but similar) solutions would both be punished too hard, resulting in only bad but different candidates to survive selection.
+		
+		\textbf{Time complexity and an efficient approximation}: computing the average distance of a single permutation $\sigma$ to all other nodes would require rougly $\Theta(n^2)$ computations. Hence, if this metric must be computed for every individual in the population, the algorithm quickly becomes slow. Instead, we do two things:
+		\begin{enumerate}
+			\item The fitness scores are computed for only a sub-population (eg 10\%). The remaining 90\% then receive a ``fake" fitness score based on the average penalty of the sub-population.
+			\item For each individual part of the 10\% sub-population, the distance metric is computed with a subset of nodes (for instance, 10\%). We ensure that each node is guaranteed to be compared against itself as well.
+		\end{enumerate}
+		Both parameters are tuned based on the TSP problem.
+
+
 		
 		\item \textbf{Multiple phases \& islands in tandem}
 		The initial algorithm starts from \textbf{three islands}, each island with its own mutation operator to encourage. Migration between islands occurs every 25 epochs. During migration, for each island $i$ a predetermined percentage of its population (e.g. 10\%) is moved to the next island ($(i+1) \%3$).
 		
-		Running multiple islands in tandem is significantly slower than running one island. It may also not be needed to maintain all islands during the entire execution of the algorithm. When diversity is required, then the computational cost of multiple islands may be acceptable, however, after a certain duration the goal is no longer diversity, but instead to obtain a good solution. Hence, then one island may be better. We therefore introduce two phases:
+		Running multiple islands in tandem is significantly slower than running one island. It may also not be beneficial to maintain all islands during the entire execution of the algorithm. When diversity is required, then the computational cost of multiple islands may be acceptable. However, after a certain duration the goal is no longer diversity, but instead, to obtain a good solution. Hence, one island may be better. We therefore introduce two phases:
 		\begin{enumerate}
 			\item Phase 1) 3 islands in tandem, with migration after 25 epochs.
 			\item Phase 2) After a certain duration (e.g. 2.5 minutes), merge all islands into a single island (through the elimination procedure discussed above).
@@ -284,68 +285,38 @@
 		 	
 	
 	\end{enumerate}
-	
-	\textbf{PL-GS:} \\
-	The algorithm as introduced by \citeauthor{santucci_gradient_2020} does not contain any diversity population mechanisms. However, approaches similar to fitness sharing could be adapted to this algorithm as well. We provide a some suggestions:
-	\begin{enumerate}
-		\item \textbf{Similarity penalty} \\ 
-		A penalty could be added to the fitness $f(\cdot)$ in the form of a regularization term, based on the average distance of $\lambda$ samples. We could express the resulting function $g(\cdot)$ as follows:
-		$$
-		g(\sigma^{(i)}) = f(\sigma^{(i)}) + \frac{1}{\lambda} \sum_{\substack{\sigma^{(j)}, \sigma^{(k)} \\ \in \{ \sigma^{(1)} \dots \sigma^{(\lambda)} \}}} d(\sigma^{(j)}, \sigma^{(k)})
-		$$
-		\item \textbf{Islands in tandem} \\
-		This procedure is not so trivial to adapt for the PL-GS algorithm. While multiple PMFs $p_\mathbf{w}(\cdot)$ could each be initialized randomly, the migration procedure is not so trivial. Migration the populations (in this case the $\lambda$ samples) would not be useful, as this would result in an incorrect gradient estimation $\nabla_{\mathbf{w}} F\left(\mathbf{w}\right)$, required for the update rule:
-		$$\mathbf{w} \leftarrow \mathbf{w} - \eta \nabla F\left(\mathbf{w}\right)$$.
 		
-		
-	\end{enumerate}
-	
 
 
 \subsection{Stopping criterion}
-For the five minute benchmarks, no stopping criterion is applied. Even if an algorithm's population may have converged to a single individual, due to mutation there may still be a slim chance of obtaining a better result. 
+For the five-minute benchmarks, no stopping criterion is applied. Even if an algorithm's population may have converged to a single individual, there may still be a slim chance of obtaining a better result due to mutation. 
 
-For the histogram experiment with 500 runs, running the algorithm for 5 minutes each time, was not an option due to time constrains. Here we set a smaller time window that is roughly based on on our approximate ``dissimilarity" metric. The metric is defined as follows:
+For the histogram experiment with 500 runs, running the algorithm for 5 minutes each time, was not an option due to time constraints. Here we set a smaller time window that is roughly based on our approximate ``dissimilarity" metric. The metric is defined as follows:
 $$
 \frac{1}{P} \sum_{\substack{i~\in~\{1 \dots P \}}} d(\sigma_i, \sigma_{(i+1) \% P})
 $$
-Here, $P \in \mathbb{N}$ is the population size and $d()$ is the same distance function discussed section \ref{cha:diversity}. The metric can be computed with a time complexity of roughly $\Theta(P \times n)$.
-Intuitively, the metric compares each node to one other node and computes the average distance. Based on this metric we have an idea of how similar the population is, e.g.: 747.5 in a 750 tours TSP implies a lot of dissimilarity, while 0 implies that each node is the same.
+Here, $P \in \mathbb{N}$ is the population size and $d()$ is the same distance function discussed in section \ref{cha:diversity}. The metric can be computed with a time complexity of roughly $\Theta(P \times n)$.
+Intuitively, the metric compares each node to one other node and computes the average distance. Based on this metric we have an idea of how similar the population is, e.g.: 747.5 in a 750-tours TSP implies a lot of dissimilarity, while 0 implies that each node is the same.
 
-Based on this population-similarity metric, we set the stopping time for the 50 tour TSP to 20 seconds per run. This results in approximately the final 50 iterations to be stuck at the identical population (50 iterations roughly corresponds to 5 seconds, with a single island, or 20\% of the running duration).
+Based on this population-similarity metric, we set the stopping time for the 50-tour TSP to 20 seconds per run. This results in approximately the final 50 iterations to be stuck at the identical population (50 iterations roughly corresponds to 5 seconds, with a single island, or 20\% of the running duration).
 
 %\ReplaceMe{Which stopping criterion did you implement? Did you combine several criteria?}
 
 
 \subsection{Parameter selection}
-	A gridsearch, trying every combination is not possible, running each for 5 minutes.
-	we opted for the following route:
-	optimize one parameter at a time, in the following order...
-	
-	This resulted in unreliable results, where frequently popul size = 10 would be choosen as best, but then other procedures have less impact. or sometimes k > 3, 
-	when in the end local search or fitness sharing didn't have that much impact.
-	
-	as the first choices resulted in the final procedures not have to have as much influence anymore, such as fitness sharing or local search.
-	
-	a better approach is the following:
-	start from a few configurations that should work well in theory, and start from there
-	then from this base line alternate one component at a time and see if it improves performance or not.
+	A grid search, trying every combination is not possible due to the large number of parameters running each for 5 minutes. Instead, we start from a base set of parameters and optimize one parameter at a time. The order in which we considered the parameters and the respective values we experimented with are shown in table \ref{tbl:order-of-params}. This procedure is applied to all TSPs. Afterwards, we tweak the parameters by hand based on intuition. The final parameters per number of tours is shown in table \ref{tbl:params}.
 
-
-	%\ReplaceMe{For all of the parameters that are not automatically determined by adaptivity or self-adaptivity (as you have described above), describe how you determined them. Did you perform a hyperparameter search? How did you do this? How did you determine these parameters would be valid both for small and large problem instances?}
-	
-	For each TSP, the following parameters must be obtained:
 	\begin{table}[ht]
 		\centering
 		\begin{tabularx}{0.9\textwidth}{|X|X|}
 			\hline
 			\textbf{Parameter} & \textbf{Values} \\
 			\hline
-			Population size & 10, 100, 200, 500, 1000 \\
+			Population size & 10, 50, 100, 200, 500, 1000 \\
 			\hline
 			Offspring size multiplier & 1, 2, 3 \\
 			\hline
-			k (k-tournament in selection \& elimination) & 3, 5, 25 \\
+			k (k-tournament in selection \& elimination) & 3, 5, 10, 25 \\
 			\hline
 			Mutation rate (\%) & 0.05, 0.2, 0.4 \\
 			\hline
@@ -362,7 +333,8 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 			Local search (either 2-opt or insert random node) & None, (2-opt, 1), (2-opt, 5), (insert, 0.1), (insert, 0.5), (insert, 1) \\
 			\hline
 		\end{tabularx}
-		\caption{Parameters for TSP}
+		\caption{Parameters for TSP in order of which one was optimized first.}
+		\label{tbl:order-of-params}
 	\end{table}
 
 	
@@ -373,12 +345,10 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 
 
 \section{Plackett-Luce Gradient Search - An advanced EDA scheme} \label{cha:pl-gs}
-	Estimation of Distribution (EDA) schemes replace standard variation operators, and instead consider a model (e.g.: a graphical model) of which samples are taken, evaluated, and based on these scores the model is adjusted to hopefully create better samples in the future. \textbf{TODO: REF BOOK}
-	
-	In this section, we explore such scheme based on \citeauthor{santucci_gradient_2020}'s gradient search algorithm, ``Plackett-Luce Gradient Search (PL-GS)".
+	Estimation of Distribution (EDA) schemes replace standard variation operators, and instead, consider a model (e.g.: a graphical model) of which samples are taken, evaluated, and based on these scores the model is adjusted to hopefully create better samples in the future \cite{eiben_introduction_2015}. In this section, we explore such a scheme based on \citeauthor{santucci_gradient_2020}'s gradient search algorithm, ``Plackett-Luce Gradient Search (PL-GS)".
 	
 	\subsection{Concise explanation of the algorithm}
-	The paper introduces a gradient based optimization scheme, applied to a discrete domain. In particular, to the space of permutations $\sigma \in \mathbb{S}^n$. 
+	The paper introduces a gradient-based optimization scheme, applied to a discrete domain. In particular, to the space of permutations $\sigma \in \mathbb{S}^n$. 
 	Since $f : \mathbb{S}^n \rightarrow \mathbb{R}$ has a discrete domain, one cannot directly apply a gradient descent scheme to optimize $f$ as follows:
 	$$
 	\sigma \leftarrow \sigma + \eta \nabla f(\sigma)
@@ -405,11 +375,11 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 %		% \item \ReplaceMe{Just state the feature, you do not need to explain it, instead refer to the appropriate section below.}
 %		\item Each candidate solution $\sigma$ is samples from a distribution $p_\mathbf{w}$ where the parameters $\mathbf{w}$ are optimized.
 %		\item The parameters $\mathbf{w}$ are optimized through gradient gradient ascent. (Although the fitness function $f$ is not necessarily differentiable, though proper choice of a good representation for $p_\mathbf{w}$ will be w.r.t. $\mathbf{w}$)
-%		\item $p_\mathbf{w}$ is represented as categorical distribution based on the Plackett-Luce ranking model.
+%		\item $p_\mathbf{w}$ is represented as a categorical distribution based on the Plackett-Luce ranking model.
 %	\end{enumerate}
 	
 	Based on the above details, we obtain the following algorithm to find $\sigma$ for which $f(\sigma)$ is good:\\
-	\textbf{PL-GS:} \textit{high-level view of the pseudo code:} \\
+	\textbf{PL-GS:} \textit{high-level view of the pseudo-code:} \\
 	\textbf{Objective:} Optimize $F(\mathbf{w}) = E_\mathbf{w}[f(\sigma)] = \sum_{\sigma \in \mathbb{S}^n} f(\sigma) p_\mathbf{w}(\sigma)$ \\	
 	\textbf{Initialization:} Define the uniform categorical distribution $p_\mathbf{w}(\sigma)$ s.t. $\forall~\sigma: p_\mathbf{w}(\sigma)=\frac{1}{|\mathbb{S}^n|}$ \\	
 	\textbf{Repeat until convergence:}
@@ -431,7 +401,7 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 		&=\prod_{i=1}^{n-1} \frac{\mathbf{w}_{\sigma(i)}}{\sum_{j=i}^n \mathbf{w}_{\sigma(j)}}
 	\end{align}
 	Intuitively, a sampling procedure for this PMF is obtained by sampling $n$ nodes from a categorical distribution with parameters $\mathbf{p} = (\mathbf{w}_1 \dots \mathbf{w}_n)$ without replacement. Such sampling procedure can be efficiently implemented using the ``Gumbel trick" \cite{kool_stochastic_2019}. Our Python implementation includes this trick. \\
-	\textbf{Note:} the definition of $p_\mathbf{w}(\sigma)$ in the paper is more mathematically involved, including multiple $\exp()$ functions to ensure that $\mathbf{w}$ consists of positive values. We omit this notation in equation here for simplicity.
+	\textbf{Note:} the definition of $p_\mathbf{w}(\sigma)$ in the paper is more mathematically involved, including multiple $\exp()$ functions to ensure that $\mathbf{w}$ consists of positive values. We omit this notation in the equation here for simplicity.
 
 	As shown in equation (1), the gradient of $\nabla F_\mathbf{w} \in \mathbb{R}^n$, requires the computation of $\nabla \log p_\mathbf{w}(\sigma)$. By applying Calculus rules, one can derive the following partial derivative \citep{santucci_gradient_2020}:
 	$$
@@ -442,16 +412,16 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 	\subsubsection{An extension on the PMF}
 	Here, we explore another representation for $p_\mathbf{w}$ which is not part of \cite{santucci_gradient_2020, ceberiojosu_model-based_2023}. 
 	
-	\textbf{Motivation:} A noticeable limitation of the $p_\mathbf{w}$ representation in \ref{cha:pmf_indep} is the independence assumption between nodes. E.g.: traversing (= sampling) node $a$ will not influence whether the next node to be traversed is node $b$ or $c$. However, this is an incorrect assumption in the TSP which could drastically hurt the performance. For instance, when the algorithm has learned the optimal path to be $a, b, c, \dots $. Now consider an unlucky node being sampled at the start, e.g. $b$ is sampled first. Using the representation from the $p_\mathbf{w}$, the next node is most likely to be $a$, however, this may no longer be the best next node the traverse, resulting in reduced scores.
+	\textbf{Motivation:} A noticeable limitation of the $p_\mathbf{w}$ representation in \ref{cha:pmf_indep} is the independence assumption between nodes. E.g.: traversing (= sampling) node $a$ will not influence whether the next node to be traversed is node $b$ or $c$. However, this is an incorrect assumption in the TSP which could drastically hurt the performance. For instance, when the algorithm has learned the optimal path to be $a, b, c, \dots $. Now consider an unlucky node being sampled at the start, e.g. $b$ is sampled first. Using the representation from the $p_\mathbf{w}$, the next node is most likely to be $a$, however, is no longer the best next node the traverse, resulting in reduced scores. Instead, $c$ would have been the correct node.
 	
-	Another note, is related to the number of learned paths. A single $p_\mathbf{w}$ learns a single optimal path, but perhaps it could be interesting to also consider others paths. We therefore, represent $p_\mathbf{w}$ as a first order Markov chain network, where sampling a node $a$ at time step $t$ is dependent on the previously sampled node at time step $t-1$. Its Bayesian network is depicted in figure \ref{fig:bayesian-network}. Formally, $p_\matr{w}$ is defined as follows:
+	Another note is related to the number of learned paths. A single $p_\mathbf{w}$ learns a single optimal path, but perhaps it could be interesting to also consider other paths. We therefore represent $p_\mathbf{w}$ as a first order Markov chain network, where sampling a node $a$ at time step $t$ is dependent on the previously sampled node at time step $t-1$. Its Bayesian network is depicted in figure \ref{fig:bayesian-network}. Formally, $p_\matr{w}$ is defined as follows:
 	$$
 	\begin{aligned}
 		p_\matr{W}(\sigma) &= p\left(\sigma(1)\right) \cdot \prod_{t=2}^{n-1} p\left(\sigma(t) \mid \sigma(t-1) \right) \\
 						   &= \frac{1}{n} \prod_{t=2}^{n-1} \frac{\matr{W}_{\sigma(t) \mid \sigma(t-1)}}{\sum_{j=t}^n \matr{W}_{\sigma(j) \mid \sigma(t-1)}} \\
 	\end{aligned}
 	$$
-	Here, $\matr{W}$ is an $n \times n$ matrix where $\matr{W}_{ij} = \matr{W}_{i | j}$ denotes the probability of sampling node $i$ given that $j$ has just been sampled. We assume the probability of traversing the first node as uniform, hence the $\frac{1}{n}$ in the second equation.
+	Here, $\matr{W}$ is an $n \times n$ matrix where $\matr{W}_{ij} = \matr{W}_{i | j}$ denotes the probability of sampling node $i$ given that $j$ has just been sampled. We assume the probability of traversing the first-node as uniform, hence the $\frac{1}{n}$ in the second equation.
 	
 	\begin{figure}
 		\centering
@@ -470,21 +440,34 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 	$$
 	when $i$ does not succeed $j$.
 	
-	\subsubsection{Limitations?}
-	%The model enables us to assign a probability value to each, given a set of nodes to consider.
-	
-	limitations:
-	- scalability,
-	- numerical stability
-	- failed representation, encouraging small and large values, inherently unstable.	
-	- my implemention: no such thing as the gumbell trick, so sampling is much slower. also not every parameter updated from a single sample, this also results in slower performance.
+	\subsection{Considerations for future work}
+	\begin{enumerate}
+		\item
+	The algorithm as introduced by \citeauthor{santucci_gradient_2020} does not contain any \textbf{diversity population }mechanisms. However, approaches similar to fitness sharing could be adapted to this algorithm as well. A penalty could be added to the fitness $f(\cdot)$ in the form of a regularization term, based on the average distance of $\lambda$ samples. We could express the resulting function $g(\cdot)$ as follows:
+	$$
+	g(\sigma^{(i)}) = f(\sigma^{(i)}) + \frac{1}{\lambda} \sum_{\substack{\sigma^{(j)}, \sigma^{(k)} \\ \in \{ \sigma^{(1)} \dots \sigma^{(\lambda)} \}}} d(\sigma^{(j)}, \sigma^{(k)})
+	$$
+
+	\item Although selection is not directly applicable to PL-GS since there is no population to apply variation operators on, one could pose the question which samples are allowed to influence the gradient $\nabla F\left(\mathbf{w}\right)$, used to update $\mathbf{w}$:
+	$$\mathbf{w} \leftarrow \mathbf{w} - \eta \nabla F\left(\mathbf{w}\right)$$
+	By default all $\{ \sigma^{(1)} \dots \sigma^{(\lambda)} \} $ are used with equal weighting. However, also here, \textbf{selection} procedures such as k-tournament could be applied to, for instance, only select the good samples to update $\mathbf{w}$, while eliminating the bad ones and thus preventing them from updating $\mathbf{w}$ in a bad direction.
+	\end{enumerate}
+		
+%	\subsubsection{Limitations?} \textbf{TODO}
+%	%The model enables us to assign a probability value to each, given a set of nodes to consider.
+%	
+%	limitations:
+%	- scalability,
+%	- numerical stability
+%	- failed representation, encouraging small and large values, inherently unstable.	
+%	- my implemention: no such thing as the gumbell trick, so sampling is much slower. also not every parameter updated from a single sample, this also results in slower performance.
 	
 
 \section{Numerical experiments (target: 1.5 pages)}
 	%\RemoveMe{\textbf{Goal:} Based on this section and our execution of your code, we will evaluate the performance (time, quality of solutions) of your implementation and your ability to interpret and explain the results on benchmark problems.}
 
-\subsection{Metadata}
-	All parameters are presented in table \ref{tbl:params}. Overall, the parameters remain relatively constant depending on the number of tours. Two exceptions; local search and $k$ in k-tournament. Although two-opt obtained good results for smaller tours, it does not scale to larger tours. We did experiment with applying two-opt to only a subset of nodes in a path, but although less computationally demanding, it did not always result in good candidate solutions. This may be a side effect of the symmetric matrix assumption we've made to improve time complexity. Two-opt reverses the path between two nodes, and as the number of tours increases, the length of these reversed lists also increases. This may result in the error due to the symmetric distance matrix assumption to also increase, resulting in a higher probability of faulty solutions. As a compensation for the lack of a good local search procedure in the larger tours, we increase $k$ to increase convergence speed, as the good individuals in the populations have larger chance of surviving.
+\subsection{Metadata} \label{cha:meta}
+	All parameters are presented in table \ref{tbl:params}. Overall, the parameters remain relatively constant depending on the number of tours. There are two exceptions; local search and $k$ in k-tournament. Although two-opt obtained good results for smaller tours, it does not scale to larger tours. We did experiment with applying two-opt to only a subset of nodes in a path, but although less computationally demanding, it did not always result in good candidate solutions. This may be a side effect of the symmetric matrix assumption we've made to improve time complexity. Two-opt reverses the path between two nodes, and as the number of tours increases, the length of these reversed lists also increases. This may result in the error due to the symmetric distance matrix assumption to also increase, resulting in a higher probability of faulty solutions. As a compensation for the lack of a good local search procedure in the larger tours, we increase $k$ to increase convergence speed, as the good individuals in the populations have a larger chance of surviving.
 
 
 	%\ReplaceMe{What parameters are there to choose in your evolutionary algorithm? Which fixed parameter values did you use for all experiments below? If some parameters are determined based on information from the problem instance (e.g., number of cities), also report their specific values for the problems below.
@@ -505,10 +488,10 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 \subsection{tour50.csv}	
 	Figures \ref{fig:meanfitnesses} and \ref{fig:tour50csvmeanobjectivevalue} display the performance graphs. The algorithm is run for exactly 20 seconds. The first 10\% in the convergence graph (fig \ref{fig:tour50csvmeanobjectivevalue}) have been removed. The graph depicts the results from a single island. Note that the duration in the graph is not entirely linear. The first 25 iterations take 10 seconds, while the remaining 100 iterations also take 10 seconds. This is due to the first iterations being more computationally demanding due to having three islands in tandem.
 	
-	To gain some insight in a single run, we refer to table \ref{tbl:convergence}. Due to the two-opt local search, the algorithm finds a better solution than the greedy heuristic provided on Toledo within 25 iterations. Meanwhile, due to the order crossover and other diversity mechanisms, the population can remain diverse in phase one (the maximum distance is 50 for 50 tours). Phase two behaves similar to the egg-holder algorithm where the entire population quickly converges to a single solution. This is due to the edge crossover operator used in phase 2. We observe that the average distance between individuals quickly converges to zero, indicating that the entire population has become the same individual.
+	To gain some insight in a single run, we refer to table \ref{tbl:convergence}. Due to the two-opt local search, the algorithm finds a better solution than the greedy heuristic provided on Toledo within 25 iterations. Meanwhile, due to the order crossover and other diversity mechanisms, the population can remain diverse in phase one (the maximum distance is 50 for 50-tours). Phase two behaves similarly to the egg-holder algorithm where the entire population quickly converges to a single solution. This is due to the edge crossover operator used in phase 2. We observe that the average distance between individuals quickly converges to zero, indicating that the entire population has become the same individual.
 	
 	The histogram (figure \ref{fig:meanfitnesses}) indicates quite consistent results. The algorithm consistently finds candidate solutions which are better than the greedy heuristic from Toledo.
-	An example candidate solution with score 25975.70 is the following: (0 26 21	32	17	40	34	33	44	36	23	28	27	12	25	39	37	20	49	22	6	9	43	30	48	5	8	46	35	16	4	15	47	42	11	3	19	38	10	13	7	41	14	1	18	24	45	2	31	29).
+	An example candidate solution with score of 25975.70 is the following: (0 26 21	32	17	40	34	33	44	36	23	28	27	12	25	39	37	20	49	22	6	9	43	30	48	5	8	46	35	16	4	15	47	42	11	3	19	38	10	13	7	41	14	1	18	24	45	2	31	29).
 
 
 	%\ReplaceMe{Run your algorithm on this benchmark problem (with the 5 minute time limit from the Reporter). \textbf{Include a typical convergence graph, by plotting the mean and best objective values in function of the time} (for example based on the output of the Reporter class).
@@ -539,7 +522,7 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 			\textbf{Local search} & 2-opt & 2-opt & IRN, 0.5 & IRN, 0.5 \\
 			\hline
 		\end{tabular}
-		\caption{Parameter settings for different tours. IRN refers to the Insert Random Node operator and 0.5 the number of nodes to consider, as discussed in section \ref{cha:local search}}
+		\caption{Parameter settings for different tours. IRN refers to the Insert Random Node operator and 0.5 is the number of nodes to consider, as discussed in section \ref{cha:local search}}
 		\label{tbl:params}
 	\end{table}
 	
@@ -571,44 +554,57 @@ Based on this population-similarity metric, we set the stopping time for the 50 
 
 
 \subsection{tour100.csv}\label{sec_shorttour}
+Figure \ref{fig:tour100} shows a typical convergence graph of the algorithm running for five minutes. Similar as discussed before, due to islands running in tandem in phase 1), the first 125 roughly take 2.5 minutes and the remaining 375 iterations, the other 2.5 minutes. Here, the difference between the two phases is clearly noticeable, having phase one with a more exploration objective, while phase aims to exploit, resulting in a behavior similar to the egg-holder algorithm. We observe that the algorithm quite easily outperforms the simple greedy heuristic from Toledo. We observe that similar to the 50-tours problem, the algorithm does not require the entire 5 minutes to find a good solution.
 
-can nicely see the egg holder effect. of phase 2
+%\ReplaceMe{Run your algorithm on this benchmark problem (with the 5 minute time limit from the Reporter). \textbf{Include a typical convergence graph, by plotting the mean and best objective values in function of the time} (for example based on the output of the Reporter class).
+%
+%What is the best tour length you found in each case? 
+%
+%Interpret your results. How do you rate the performance of your algorithm (time, memory, speed of convergence, diversity of population, quality of the best solution, etc)? Is your solution close to the optimal one?}
 
-\ReplaceMe{Run your algorithm on this benchmark problem (with the 5 minute time limit from the Reporter). \textbf{Include a typical convergence graph, by plotting the mean and best objective values in function of the time} (for example based on the output of the Reporter class).
-
-What is the best tour length you found in each case? 
-
-Interpret your results. How do you rate the performance of your algorithm (time, memory, speed of convergence, diversity of population, quality of the best solution, etc)? Is your solution close to the optimal one?}
-
-\subsection{tour500.csv}
-
-is stuck in suboptimal. tried lower k, but that delays convergence too much resulting in worse overall.
-perhaps could try 
-
-\ReplaceMe{Answer the same questions as in \cref{sec_shorttour}.}
-
-%\subsection{tour750.csv}
-%param k strange.
-%hyperparams = HyperparamsEvolAlgorithm()
-%hyperparams.popul_size = 50
-%hyperparams.offspring_size_multiplier = 1
-%hyperparams.k = 25 # strange ...
-%hyperparams.mutation_rate = 0.2
-%hyperparams.migrate_after_epochs = 25
-%hyperparams.migration_percentage = 0.05
-%hyperparams.merge_after_percent_time_left = 0.5
-%hyperparams.fitness_sharing_subset_percentage = 0.05
-%hyperparams.alpha = 1
-%hyperparams.local_search = ("insert_random_node", 0.5)
-
-
-\subsection{tour1000.csv}
-
+\subsection{tour500.csv and tour1000.csv}
+Figures \ref{fig:tour500} and \ref{fig:tour1000} depict the convergence graphs over 5 minutes. With the larger maps, we observe that problems start to arise, as we can no longer beat the greedy heuristic from Toledo within the 5 minute interval. This behavior can be partly explained due to the local search operator. As discussed in section \ref{cha:meta}, our two-opt local search operator is computationally demanding, and does not scale well to the larger tours. We therefore, need to use a less demanding local search operator (insert random node), which clearly has impact. As a consequence of the slow convergence, we end up having to increase the selection pressure to $k=10$  for 500 tours and $k=25$ for 1000 tours. This results in slightly faster due to less randomness, but such large $k$ values are unusual as the population size is only 50. Most likely, in the long run, this procedure, in combination with the egg-holder effect in phase 2 will almost guarantee we will eventually get stuck in local optimum. However, we also experimented with less selection pressure, but this would converge slower, resulting in a worse overall sore at the end of the 5 minute mark.
 
 \subsection{PL-GS}
+Finally, we discuss the two PL-GS algorithms for the 50 tours TSP. The results are shown in figures \ref{fig:placketluceindendent} (PMF with independence assumption) and \ref{fig:placketluceconditional} (PMF with conditional assumption (ours)). Both algorithms ran for one minute. While both algorithms seem nice in practice, the graphs demonstrate that both algorithms are immediately outperformed by even a simple evolutionary algorithm (eg without diversity promotion or local search). The independent PMF obtained a final best fitness of $76,999.85$ and population average fitness of $158,960,90$, the conditional PMF a final best fitness of $83,706.50$ and population average fitness of $1,316,909.39$ indicating that both algorithms do converge but slowly.
+
+While techniques exist to speed up convergence, e.g.: using a larger learning rate, the PL-GS algorithm is inherently unstable due to the representation of both PMFs. Hence, choosing to increasing the learning may increase the chances of overflow errors. This is due to the design of the Plackett-Luce model, assigning a probability score of sampling a node at time step $t$. A converged model, which consistently results in similar samples thus requires the probability weight of sampling the first node to be large (towards infinity), while later nodes should have a lower probability, with the final approaching 0. As the length of the permutation becomes longer, this problem becomes even more prominent. Hence, scalability is a major issue for this model.
+
+We also observe that our proposed PMF representation, converges slower than the independent PMF. This can be explained due to the number of parameters which must be optimized, which is now $n^2$, instead of $n$. A second reason, is that a sample $\sigma \sim p_\matr{w}(\sigma)$ can only influence the parameters $\matr{W}_{t|t-1}$ for $t \in \{2 \dots n\}$. The remaining weights can only be updated if they are part of another permutation sample.
+
+%Although in theory, the latter PMF representation should be able to learn more complex distributions, we observed it got stuck in local minima faster than the independent PMF.
+
+	
 
 
-\ReplaceMe{Answer the same questions as in \cref{sec_shorttour}.}
+\section{Critical reflection (target: 0.75 pages)}
+
+%\ReplaceMe{What are the three main strengths of evolutionary algorithms in your experience?}
+Three positive points:
+\begin{enumerate}
+ \item Having a phase-based scheme with a tweakable a parameter on when to go to phase two allows for an easily adaptive algorithm depending on the problem. For easy problems, with few local minima, phase 2 can start early allowing to find optimum quickly. For complicated problems, the first phase can go on for a long time without unwillingly converging to a population of identical individuals. Secondly, since only phase 1) contains multiple islands, we gain the population diversity benefits,  while the computational drawbacks can be tempered as phase 2) merges all islands and preserves the best ones.
+
+\item Our two-opt local search operator which assumes a symmetric matrix can still perform well for smaller TSP problems, resulting in the algorithm quickly converging to a good solution. The symmetric matrix assumption allows for a much faster implementation than if the asymmetry must be considered.
+
+\item Our fitness sharing implementation encourages diversity, while not being a big burden on speed due to a fast approximation of the shared fitness values of the population.
+\end{enumerate}
+
+Three weak points:
+\begin{enumerate}
+\item Since our best local search operator (two-opt) did not scale to larger problems we have a less powerful operator for the larger tours. This can be observed in the performance graphs of the larger tours, as the algorithm converges much slower. As a consequence, we aim to increase convergence speed in other ways due to an unusually large $k$ value, which may increase the chances of getting stuck in a local minimum.
+\item While the objective of the second phase is to quickly converge to the optimal solution, given the series of good candidates found in phase 1), we found that phase 2) may behave too much like the egg-holder algorithm, quickly eliminating any diversity. This is largely due to the edge crossover operator, only preserving mutual edges between individuals.
+
+\item The island model, although resulting in improved performance, remains computationally demanding. Multi-threading could help preserve the benefits while omitting the computational costs.
+
+\item While we do have parameters depending on the number of tours, the parameters remain relatively static during the entire run (apart from the two phases). It would be interesting to investigate more dynamic parameters that change throughout the run. For instance, a dynamic $k$ value in k-tournament, requesting more diversity (low $k$) at the start and more selection pressure towards the end. Alternatively, a fitness-sharing scheme that only "kicks in" when the population diversity becomes too low, could also be interesting to explore. These dynamic models come at the cost of less predictability and this is the main reason that we did not explore them in this project.
+\end{enumerate}
+
+
+I initially started this assignment with the mindset of avoiding evolutionary algorithms at all costs, as they are known to be slow. Therefore, I implemented the gradient descent scheme, PL-GS. However, it quickly became apparent that such a scheme on its own would never be able to find an absolute optimum, as it kept getting stuck in local optima. In contrast, even the simplest evolutionary algorithm could outperform a greedy metric, although, with perhaps a slightly longer running time.
+
+This experience has truly shown how evolutionary algorithms benefit from utilizing diversity schemes to avoid getting stuck in local optima. Additionally, they can employ local search schemes to find solutions relatively quickly. We can easily choose a balance in the trade-off between speed (exploitation) and finding the optimal answer (exploration). This is a benefit not immediately applicable to solely gradient descent schemes, for instance.
+
+
 
 
 
@@ -647,51 +643,22 @@ perhaps could try
 		\label{fig:tour1000}
 	\end{minipage}%
 \end{figure}
-	
+
 \begin{figure}[htbp]
-		\centering
-		\begin{subfigure}{0.48\linewidth}
-			\includegraphics[width=\linewidth]{placket_luce_conditional}
-			\caption{PL-GS (Independence assumption)}
-			\label{fig:placketluceconditional}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}{0.48\linewidth}
-			\includegraphics[width=\linewidth]{placket_luce_indendent}
-			\caption{PL-GS (Conditional assumption)}
-			\label{fig:placketluceindendent}
-		\end{subfigure}
-		\caption{PL-GS Figures}
+	\centering
+	\begin{subfigure}{0.48\linewidth}
+		\includegraphics[width=\linewidth]{vanilla2.pdf}
+		\caption{PL-GS (Independence assumption)}
+		\label{fig:placketluceindendent}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.48\linewidth}
+		\includegraphics[width=\linewidth]{cond2.pdf}
+		\caption{PL-GS (Conditional assumption)}
+		\label{fig:placketluceconditional}
+	\end{subfigure}
+	\caption{PL-GS Figures}
 \end{figure}
-	
-
-
-
-\section{Critical reflection (target: 0.75 pages)}
-
-\RemoveMe{\textbf{Goal:} Based on this section, we will evaluate your understanding and insight into the main strengths and weaknesses of your evolutionary algorithms.}
-
-\ReplaceMe{What are the three main strengths of evolutionary algorithms in your experience?}
-
-\begin{enumerate}
- \item 
- \item 
- \item 
-\end{enumerate}
-
-\ReplaceMe{What are the three main weak points of evolutionary algorithms in your experience?}
-
-\begin{enumerate}
- \item 
- \item 
- \item 
-\end{enumerate}
-
-\ReplaceMe{Describe the main lessons learned from this project. Do you believe evolutionary algorithms are appropriate for the problem studied in this project? Why (not)? What surprised you and why? What did you learn from this project?}
-
-\section{Other comments} \label{sec_other}
-
-\ReplaceMe{In case you think there is something important to discuss that is not covered by the previous sections, you can do it here. }
 
 \bibliographystyle{apalike}
 \bibliography{references}
